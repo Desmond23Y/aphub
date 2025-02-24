@@ -30,7 +30,9 @@ class HomePage extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.blueAccent,
       ),
-      body: Container(
+      
+      body: SafeArea(
+        child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Colors.blue, Colors.purple],
