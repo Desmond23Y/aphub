@@ -27,7 +27,7 @@ class HomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/icons/logo_icon.jpg', height: 120), // Ensure correct filename
+              Image.asset('assets/icons/aphub_emblems.jpg', height: 120), // Ensure correct filename
               const SizedBox(height: 20),
               const Text(
                 'Select Your Role',
