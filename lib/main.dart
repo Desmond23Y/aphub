@@ -28,26 +28,48 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('APHub'),
         centerTitle: true,
+        backgroundColor: Colors.blueAccent,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to APHub!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {}, // Navigate to Booking Page
-              child: const Text('Book a Venue'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {}, // Navigate to Facilities Page
-              child: const Text('View Facilities'),
-            ),
-          ],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue, Colors.purple],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Welcome to APHub!',
+                style: TextStyle(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {}, // Navigate to Booking Page
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blueAccent,
+                ),
+                child: const Text('Book a Venue'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {}, // Navigate to Facilities Page
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blueAccent,
+                ),
+                child: const Text('View Facilities'),
+              ),
+            ],
+          ),
         ),
       ),
     );
