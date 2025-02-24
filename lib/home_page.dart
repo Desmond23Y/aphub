@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'roles/student.dart';
-import 'roles/lecturer.dart';
-import 'roles/admin.dart';
+import 'roles/students.dart';
+import 'roles/lecturers.dart';
+import 'roles/admins.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -21,21 +21,28 @@ class HomePage extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentPage()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const StudentPage()));
               },
               child: const Text('Student'),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const LecturerPage()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LecturerPage()));
               },
               child: const Text('Lecturer'),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminPage()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const AdminPage()));
               },
               child: const Text('Admin'),
             ),
