@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'roles/students.dart';
 import 'roles/lecturers.dart';
 import 'roles/admins.dart';
+import 'utils/app_colors.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -12,12 +13,12 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('APHub'),
         centerTitle: true,
-        backgroundColor: Colors.black, // Matches logo theme
+        backgroundColor: AppColors.black, // Uses defined color
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFbebebe), Color(0xFF434343)], // Using your colors
+            colors: [AppColors.lightGray, AppColors.darkGray], // Uses defined colors
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -26,14 +27,14 @@ class HomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset('assets/icons/logo_icon.jpg', height: 120), // Adjusted filename
+              Image.asset('assets/icons/logo_icon.jpg', height: 120), // Ensure correct filename
               const SizedBox(height: 20),
               const Text(
                 'Select Your Role',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white, // Uses defined color
                 ),
               ),
               const SizedBox(height: 30),
@@ -58,8 +59,8 @@ class HomePage extends StatelessWidget {
         );
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.black,
+        foregroundColor: AppColors.white,
         padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
         textStyle: const TextStyle(fontSize: 18),
       ),
