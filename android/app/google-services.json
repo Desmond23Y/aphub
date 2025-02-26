@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "436254686547",
+    "firebase_url": "https://mae-project-9d22f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "mae-project-9d22f",
+    "storage_bucket": "mae-project-9d22f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436254686547:android:4a18374296ba5a8bb8f5a6",
+        "android_client_info": {
+          "package_name": "com.example.aphub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCth9R98iDWZ_H5R5_u7qhNTuUKX8NXb3U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436254686547:android:72c222017752050fb8f5a6",
+        "android_client_info": {
+          "package_name": "com.example.firebase_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCth9R98iDWZ_H5R5_u7qhNTuUKX8NXb3U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
