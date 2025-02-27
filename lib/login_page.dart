@@ -43,7 +43,7 @@ class LoginPageState extends State<LoginPage> {
         if (snapshot.exists && snapshot.value != null) {
           userData = Map<dynamic, dynamic>.from(snapshot.value as Map);
           userRole = role;
-          break; // Stop searching if user is found
+          break;
         }
       }
 
