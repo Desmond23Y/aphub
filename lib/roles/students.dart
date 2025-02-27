@@ -1,6 +1,6 @@
 // Students Functionalities
 import 'package:flutter/material.dart';
-import 'package:aphub/utils/app_colors.dart'; 
+import 'package:aphub/utils/app_colors.dart';
 
 class StudentPage extends StatelessWidget {
   const StudentPage({super.key});
@@ -8,39 +8,38 @@ class StudentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.black, 
+      backgroundColor: AppColors.black,
       appBar: AppBar(
-        title: const Image(
-          image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
-          width: 110,
-        ),  
-        backgroundColor: AppColors.darkdarkgrey,
-        actions: [
-          IconButton(
-            padding: const EdgeInsets.only(right: 15),
-            onPressed: () {
-            },
-            icon: const Image(
-              image: AssetImage('assets/icons/MAE_notification_icon.png'),
-              width: 35,
-            ),
-          )
-        ]
-      ),
+          title: const Image(
+            image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
+            width: 110,
+          ),
+          backgroundColor: AppColors.darkdarkgrey,
+          actions: [
+            IconButton(
+              padding: const EdgeInsets.only(right: 15),
+              onPressed: () {},
+              icon: const Image(
+                image: AssetImage('assets/icons/MAE_notification_icon.png'),
+                width: 35,
+              ),
+            )
+          ]),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center, // Centers horizontally
         children: [
           const SizedBox(height: 20), // Adjust space between AppBar & Container
           Container(
-            width: double.infinity, 
-            padding: const EdgeInsets.symmetric(vertical: 20), 
-            margin: const EdgeInsets.symmetric(horizontal: 20), 
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: AppColors.darkdarkgrey,
               borderRadius: BorderRadius.circular(10), // Rounded corners
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.darkGray.withOpacity(0.5), // Slightly transparent
+                  color: AppColors.darkGray
+                      .withOpacity(0.5), // Slightly transparent
                   blurRadius: 10,
                   spreadRadius: 2,
                   offset: const Offset(0, 4), // Shadow position
@@ -50,7 +49,6 @@ class StudentPage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                
                 Container(
                   padding: const EdgeInsets.all(3),
                   decoration: const BoxDecoration(
@@ -67,14 +65,16 @@ class StudentPage extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(4), // Space between ring and image
+                    padding:
+                        const EdgeInsets.all(4), // Space between ring and image
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.black,
                     ),
                     child: const CircleAvatar(
                       radius: 50, // Adjust as needed
-                      backgroundImage: AssetImage('assets/icons/MAE_DESMOND_ICON.png'),
+                      backgroundImage:
+                          AssetImage('assets/icons/MAE_DESMOND_ICON.jpg'),
                     ),
                   ),
                 ),
@@ -102,25 +102,29 @@ class StudentPage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20), // Adjust space between Container & Upcoming Booking
+          const SizedBox(
+              height: 20), // Adjust space between Container & Upcoming Booking
           _buildUpcomingBooking(), // Upcoming Booking Widget
         ],
       ),
-    bottomNavigationBar: BottomAppBar(
-      color: AppColors.darkdarkgrey,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem('assets/icons/MAE_Calender_icon.png', 'Booking', () {}),
-            _buildNavItem('assets/icons/MAE_History_icon.png', 'History', () {}),
-            _buildNavItem('assets/icons/MAE_Home_Icon.png', 'Home', () {}),
-            _buildNavItem('assets/icons/MAE_logout_icon.png', 'Logout', () {}),
-          ],
+      bottomNavigationBar: BottomAppBar(
+        color: AppColors.darkdarkgrey,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                  'assets/icons/MAE_Calender_icon.png', 'Booking', () {}),
+              _buildNavItem(
+                  'assets/icons/MAE_History_icon.png', 'History', () {}),
+              _buildNavItem('assets/icons/MAE_Home_Icon.png', 'Home', () {}),
+              _buildNavItem(
+                  'assets/icons/MAE_logout_icon.png', 'Logout', () {}),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -153,8 +157,6 @@ class StudentPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-
-          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -176,7 +178,6 @@ class StudentPage extends StatelessWidget {
     );
   }
 
- 
   Widget _buildNavItem(String iconPath, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -185,7 +186,8 @@ class StudentPage extends StatelessWidget {
         children: [
           Image.asset(iconPath, width: 30, height: 30), // Icon Image
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
         ],
       ),
     );
