@@ -5,7 +5,7 @@ import '../roles/lecturers.dart';
 import '../roles/admins.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key}); 
+  const LoginPage({super.key});
 
   @override
   LoginPageState createState() => LoginPageState();
@@ -14,7 +14,8 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   final TextEditingController tpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final DatabaseReference _database = FirebaseDatabase.instance.ref().child("users");
+  final DatabaseReference _database =
+      FirebaseDatabase.instance.ref().child("users");
 
   Future<void> _login() async {
     String tpNumber = tpController.text.trim();
@@ -29,10 +30,24 @@ class LoginPageState extends State<LoginPage> {
     }
 
     try {
-      DatabaseEvent event = await _database.child(tpNumber).once();
-      DataSnapshot snapshot = event.snapshot;
+      // Define the roles to search in
+      List<String> roles = ['admin', 'lecturer', 'student'];
+      String? userRole;
+      Map<dynamic, dynamic>? userData;
 
-      if (!snapshot.exists || snapshot.value == null) {
+      for (String role in roles) {
+        DatabaseEvent event =
+            await _database.child(role).child(tpNumber).once();
+        DataSnapshot snapshot = event.snapshot;
+
+        if (snapshot.exists && snapshot.value != null) {
+          userData = Map<dynamic, dynamic>.from(snapshot.value as Map);
+          userRole = role;
+          break; // Stop searching if user is found
+        }
+      }
+
+      if (userData == null || userRole == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User not found')),
@@ -40,26 +55,15 @@ class LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final dynamic snapshotValue = snapshot.value;
-      if (snapshotValue is! Map<dynamic, dynamic>) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid user data')),
-        );
-        return;
-      }
-
-      Map<dynamic, dynamic> userData = snapshotValue;
       String storedPassword = userData['password'] ?? '';
-      String role = userData['role'] ?? '';
 
       if (password == storedPassword) {
         Widget nextPage;
-        if (role == 'student') {
+        if (userRole == 'student') {
           nextPage = const StudentPage();
-        } else if (role == 'lecturer') {
+        } else if (userRole == 'lecturer') {
           nextPage = const LecturerPage();
-        } else if (role == 'admin') {
+        } else if (userRole == 'admin') {
           nextPage = const AdminPage();
         } else {
           if (!mounted) return;

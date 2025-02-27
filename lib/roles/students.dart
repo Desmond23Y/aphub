@@ -19,7 +19,6 @@ class StudentPage extends StatelessWidget {
           IconButton(
             padding: const EdgeInsets.only(right: 15),
             onPressed: () {
-              // TODO Function
             },
             icon: const Image(
               image: AssetImage('assets/icons/MAE_notification_icon.png'),
