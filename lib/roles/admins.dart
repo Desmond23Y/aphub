@@ -107,7 +107,7 @@ class AdminPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 200),
+              const SizedBox(height: 20),
 
               // Bottom Buttons
               _buildSection(
@@ -140,7 +140,7 @@ class AdminPage extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.darkgrey.withOpacity(0.5),
+          color: AppColors.lightgrey.withOpacity(0.2),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),
@@ -189,9 +189,9 @@ class AdminPage extends StatelessWidget {
 
   Widget _buildStatCard(String title, String value, String change) {
     return Card(
-      color: AppColors.darkgrey,
+      color: AppColors.darkdarkgrey,
       elevation: 8, // Elevation for slight depth
-      shadowColor: AppColors.darkdarkgrey, // Dark shadow effect
+      shadowColor: AppColors.lightgrey, // Dark shadow effect
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -224,9 +224,9 @@ class AdminPage extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.darkgrey,
+        backgroundColor: AppColors.darkdarkgrey,
         foregroundColor: AppColors.white,
-        shadowColor: AppColors.darkdarkgrey,
+        shadowColor: AppColors.lightgrey,
         elevation: 6, // Add depth
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
