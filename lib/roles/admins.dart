@@ -9,6 +9,9 @@ class AdminPage extends StatelessWidget {
 
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
+
+    if (!context.mounted) return; // Check if context is still valid
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),

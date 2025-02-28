@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../roles/students.dart';
 import '../roles/lecturers.dart';
 import '../roles/admins.dart';
@@ -14,8 +14,7 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   final TextEditingController tpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final DatabaseReference _database =
-      FirebaseDatabase.instance.ref().child("users");
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<void> _login() async {
     String tpNumber = tpController.text.trim();
@@ -30,24 +29,9 @@ class LoginPageState extends State<LoginPage> {
     }
 
     try {
-      // Define the roles to search in
-      List<String> roles = ['admin', 'lecturer', 'student'];
-      String? userRole;
-      Map<dynamic, dynamic>? userData;
+      DocumentSnapshot userDoc = await _firestore.collection("users").doc(tpNumber).get();
 
-      for (String role in roles) {
-        DatabaseEvent event =
-            await _database.child(role).child(tpNumber).once();
-        DataSnapshot snapshot = event.snapshot;
-
-        if (snapshot.exists && snapshot.value != null) {
-          userData = Map<dynamic, dynamic>.from(snapshot.value as Map);
-          userRole = role;
-          break;
-        }
-      }
-
-      if (userData == null || userRole == null) {
+      if (!userDoc.exists) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User not found')),
@@ -55,7 +39,9 @@ class LoginPageState extends State<LoginPage> {
         return;
       }
 
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
       String storedPassword = userData['password'] ?? '';
+      String userRole = userData['role'] ?? '';
 
       if (password == storedPassword) {
         Widget nextPage;
