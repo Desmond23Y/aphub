@@ -1,5 +1,6 @@
+import 'package:aphub/screens/create_venues.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class VenuesManagement extends StatefulWidget {
   const VenuesManagement({super.key});
@@ -9,8 +10,8 @@ class VenuesManagement extends StatefulWidget {
 }
 
 class VenuesManagementState extends State<VenuesManagement> {
-  final DatabaseReference _venuesRef =
-      FirebaseDatabase.instance.ref().child("venues");
+  final CollectionReference _venuesRef =
+      FirebaseFirestore.instance.collection("venues");
 
   @override
   Widget build(BuildContext context) {
@@ -18,22 +19,26 @@ class VenuesManagementState extends State<VenuesManagement> {
       appBar: AppBar(
         title: const Text('Venues Management'),
       ),
-      body: StreamBuilder(
-        stream: _venuesRef.onValue,
-        builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-          if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _venuesRef.snapshots(), // Listen to Firestore updates
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text("No Venues Available"));
           }
 
-          Map<dynamic, dynamic> venues =
-              Map<dynamic, dynamic>.from(snapshot.data!.snapshot.value as Map);
-          List<MapEntry<dynamic, dynamic>> venueList = venues.entries.toList();
+          List<QueryDocumentSnapshot> venues = snapshot.data!.docs;
 
           return ListView.builder(
-            itemCount: venueList.length,
+            itemCount: venues.length,
             itemBuilder: (context, index) {
-              String venueKey = venueList[index].key;
-              Map venueData = venueList[index].value;
+              var venue = venues[index];
+              String venueId = venue.id;
+              Map<String, dynamic> venueData =
+                  venue.data() as Map<String, dynamic>;
 
               return Card(
                 child: ListTile(
@@ -45,13 +50,13 @@ class VenuesManagementState extends State<VenuesManagement> {
                       IconButton(
                         icon: const Icon(Icons.edit),
                         onPressed: () {
-                          _editVenue(venueKey, venueData);
+                          _editVenue(venueId, venueData);
                         },
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () {
-                          _deleteVenue(venueKey);
+                          _deleteVenue(venueId);
                         },
                       ),
                     ],
@@ -69,15 +74,18 @@ class VenuesManagementState extends State<VenuesManagement> {
     );
   }
 
-  void _editVenue(String venueKey, Map venueData) {
+  void _editVenue(String venueId, Map<String, dynamic> venueData) {
     // Navigate to Edit Venue Page (To be implemented)
   }
 
-  void _deleteVenue(String venueKey) {
-    _venuesRef.child(venueKey).remove();
+  void _deleteVenue(String venueId) {
+    _venuesRef.doc(venueId).delete();
   }
 
   void _createVenue() {
-    // Navigate to Create Venue Page (To be implemented)
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateVenuePage()),
+    );
   }
 }
