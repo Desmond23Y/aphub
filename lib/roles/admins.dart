@@ -118,10 +118,9 @@ class AdminPage extends StatelessWidget {
                     _buildShadowedButton('Manage Bookings', () {}),
                     _buildShadowedButton('Add Venues', () {
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CreateVenuePage()),
-                      );
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const CreateVenuePage()));
                     }),
                   ],
                 ),
