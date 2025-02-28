@@ -13,7 +13,8 @@ class LoginPage extends StatefulWidget {
   LoginPageState createState() => LoginPageState();
 }
 
-class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController tpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -25,15 +26,13 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
   void initState() {
     super.initState();
 
-    
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat(reverse: true);
 
-    
     _animation = Tween<double>(
-      begin: -10 * pi / 180, 
+      begin: -10 * pi / 180,
       end: 10 * pi / 180,
     ).animate(CurvedAnimation(
       parent: _controller,
@@ -48,7 +47,7 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
   }
 
   Future<void> _login() async {
-    String tpNumber = tpController.text.trim();
+    String tpNumber = tpController.text.trim().toUpperCase();
     String password = passwordController.text.trim();
 
     if (tpNumber.isEmpty || password.isEmpty) {
@@ -60,7 +59,9 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
     }
 
     try {
-      DocumentSnapshot userDoc = await _firestore.collection("users").doc(tpNumber).get();
+      // Fetch the document directly using TP Number (converted to uppercase)
+      DocumentSnapshot userDoc =
+          await _firestore.collection("users").doc(tpNumber).get();
 
       if (!userDoc.exists) {
         if (!mounted) return;
@@ -119,7 +120,6 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              
               AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -135,7 +135,6 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
               ),
               const SizedBox(height: 10),
 
-              
               Image.asset(
                 'assets/images/MAE_APHUB_WORD.png',
                 width: 180,
@@ -143,7 +142,6 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
               ),
               const SizedBox(height: 40),
 
-              
               TextField(
                 controller: tpController,
                 style: const TextStyle(color: AppColors.white),
@@ -181,14 +179,17 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
                 onPressed: _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.darkdarkgrey,
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  shadowColor: AppColors.lightgrey.withOpacity(0.5), // Slightly transparent
+                  shadowColor: AppColors.lightgrey
+                      .withOpacity(0.5), // Slightly transparent
                   elevation: 5,
                 ),
-              child: const Text('Login', style: TextStyle(fontSize: 16, color: AppColors.lightgrey)),
+                child: const Text('Login',
+                    style: TextStyle(fontSize: 16, color: AppColors.lightgrey)),
               ),
             ],
           ),
