@@ -43,7 +43,8 @@ class VenuesManagementState extends State<VenuesManagement> {
               return Card(
                 child: ListTile(
                   title: Text(venueData['name'] ?? 'Unnamed Venue'),
-                  subtitle: Text("Capacity: ${venueData['capacity']}"),
+                  subtitle: Text(
+                      "Capacity: ${venueData['capacity']}, \nEquipment: ${venueData['equipment']}"),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

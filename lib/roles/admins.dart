@@ -1,3 +1,4 @@
+import 'package:aphub/screens/admin_create_venues.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../login_page.dart';
@@ -115,7 +116,13 @@ class AdminPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildShadowedButton('Manage Bookings', () {}),
-                    _buildShadowedButton('Add Venues', () {}),
+                    _buildShadowedButton('Add Venues', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const CreateVenuePage()),
+                      );
+                    }),
                   ],
                 ),
               ),
