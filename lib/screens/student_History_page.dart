@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
 
-
 class StudentHistoryPage extends StatelessWidget {
   const StudentHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         title: const Image(
           image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
           width: 90,
@@ -30,10 +29,10 @@ class StudentHistoryPage extends StatelessWidget {
       backgroundColor: AppColors.black,
       body: Column(
         children: [
-          const SizedBox(height: 20), 
+          const SizedBox(height: 20),
           _buildCurrentBooking(),
-          const SizedBox(height: 20), 
-          _buildPastBooking(), 
+          const SizedBox(height: 20),
+          _buildPastBooking(),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
@@ -43,7 +42,8 @@ class StudentHistoryPage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem('assets/icons/MAE_Calender_icon.png', 'Booking', () {
+              _buildNavItem('assets/icons/MAE_Calender_icon.png', 'Booking',
+                  () {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -56,7 +56,8 @@ class StudentHistoryPage extends StatelessWidget {
                 'History',
                 () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('You are already on the History page!')),
+                    const SnackBar(
+                        content: Text('You are already on the History page!')),
                   );
                 },
               ),
@@ -68,7 +69,8 @@ class StudentHistoryPage extends StatelessWidget {
                   ),
                 );
               }),
-              _buildNavItem('assets/icons/MAE_logout_icon.png', 'Logout', () {}),
+              _buildNavItem(
+                  'assets/icons/MAE_logout_icon.png', 'Logout', () {}),
             ],
           ),
         ),
@@ -76,7 +78,6 @@ class StudentHistoryPage extends StatelessWidget {
     );
   }
 
-  
   Widget _buildCurrentBooking() {
     String selectedFacility = 'All';
     String selectedStatus = 'All';
@@ -183,7 +184,6 @@ class StudentHistoryPage extends StatelessWidget {
       },
     );
   }
-
 
   Widget _buildPastBooking() {
     String selectedFacility = 'All';
@@ -292,7 +292,6 @@ class StudentHistoryPage extends StatelessWidget {
     );
   }
 
-  
   Widget _buildNavItem(String iconPath, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
