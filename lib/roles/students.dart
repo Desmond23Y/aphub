@@ -38,7 +38,7 @@ class StudentPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(10), // Rounded corners
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.darkGray
+                  color: AppColors.darkgrey
                       .withOpacity(0.5), // Slightly transparent
                   blurRadius: 10,
                   spreadRadius: 2,
@@ -56,8 +56,8 @@ class StudentPage extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.white,
-                        AppColors.lightGray,
-                        AppColors.darkGray,
+                        AppColors.lightgrey,
+                        AppColors.darkgrey,
                         AppColors.black,
                       ],
                       begin: Alignment.topLeft,
@@ -96,7 +96,7 @@ class StudentPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.lightGray, // Slightly dimmer than name
+                    color: AppColors.lightgrey, // Slightly dimmer than name
                   ),
                 ),
               ],
@@ -161,7 +161,7 @@ class StudentPage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.darkGray.withOpacity(0.2),
+              color: AppColors.darkgrey.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text(

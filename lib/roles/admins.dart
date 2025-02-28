@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../login_page.dart';
 import '../utils/app_colors.dart';
-import 'package:aphub/screens/venues_management.dart';
+import 'package:aphub/screens/admin_venues_management.dart';
 
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key});
@@ -65,7 +65,7 @@ class AdminPage extends StatelessWidget {
                   child: const TextField(
                     decoration: InputDecoration(
                       labelText: 'Search for Facility',
-                      labelStyle: TextStyle(color: AppColors.lightGray),
+                      labelStyle: TextStyle(color: AppColors.lightgrey),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.all(12),
                     ),
@@ -136,11 +136,11 @@ class AdminPage extends StatelessWidget {
 
   BoxDecoration _boxShadowDecoration() {
     return BoxDecoration(
-      color: AppColors.darkGray,
+      color: AppColors.darkdarkgrey,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
         BoxShadow(
-          color: AppColors.darkdarkgrey.withOpacity(0.5),
+          color: AppColors.darkgrey.withOpacity(0.5),
           blurRadius: 8,
           offset: const Offset(0, 4),
         ),
@@ -181,7 +181,7 @@ class AdminPage extends StatelessWidget {
           TextButton(
             onPressed: onViewAll,
             child: const Text('View All',
-                style: TextStyle(color: AppColors.lightGray)),
+                style: TextStyle(color: AppColors.lightgrey)),
           ),
       ],
     );
@@ -189,7 +189,7 @@ class AdminPage extends StatelessWidget {
 
   Widget _buildStatCard(String title, String value, String change) {
     return Card(
-      color: AppColors.darkGray,
+      color: AppColors.darkgrey,
       elevation: 8, // Elevation for slight depth
       shadowColor: AppColors.darkdarkgrey, // Dark shadow effect
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -211,9 +211,9 @@ class AdminPage extends StatelessWidget {
 
   Widget _buildBookingItem(String venue, String time, String user) {
     return ListTile(
-      leading: const Icon(Icons.event, color: AppColors.lightGray),
+      leading: const Icon(Icons.event, color: AppColors.lightgrey),
       title: Text(venue, style: const TextStyle(color: AppColors.white)),
-      subtitle: Text(time, style: const TextStyle(color: AppColors.lightGray)),
+      subtitle: Text(time, style: const TextStyle(color: AppColors.lightgrey)),
       trailing: Text(user,
           style: const TextStyle(
               fontWeight: FontWeight.bold, color: AppColors.white)),
@@ -224,7 +224,7 @@ class AdminPage extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.darkGray,
+        backgroundColor: AppColors.darkgrey,
         foregroundColor: AppColors.white,
         shadowColor: AppColors.darkdarkgrey,
         elevation: 6, // Add depth
