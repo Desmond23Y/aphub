@@ -246,7 +246,7 @@ class StudentHistoryPage extends StatelessWidget {
 
                   /// Booking Status Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey,
                     value: selectedStatus,
                     items: ['All', 'Completed', 'Cancelled']
                         .map((status) => DropdownMenuItem(
