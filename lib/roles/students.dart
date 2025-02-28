@@ -1,48 +1,50 @@
-// Students Functionalities
+import 'package:aphub/screens/student_History_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
+import 'package:aphub/screens/student_booking_page.dart';
 
 class StudentPage extends StatelessWidget {
   const StudentPage({super.key});
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.black,
       appBar: AppBar(
-          title: const Image(
-            image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
-            width: 110,
-          ),
-          backgroundColor: AppColors.darkdarkgrey,
-          actions: [
-            IconButton(
-              padding: const EdgeInsets.only(right: 15),
-              onPressed: () {},
-              icon: const Image(
-                image: AssetImage('assets/icons/MAE_notification_icon.png'),
-                width: 35,
-              ),
-            )
-          ]),
+        title: const Image(
+          image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
+          width: 90,
+        ),
+        backgroundColor: AppColors.darkdarkgrey,
+        actions: [
+          IconButton(
+            padding: const EdgeInsets.only(right: 15),
+            onPressed: () {},
+            icon: const Image(
+              image: AssetImage('assets/icons/MAE_notification_icon.png'),
+              width: 35,
+            ),
+          )
+        ],
+      ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center, // Centers horizontally
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 20), // Adjust space between AppBar & Container
+          const SizedBox(height: 20),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: AppColors.darkdarkgrey,
-              borderRadius: BorderRadius.circular(10), // Rounded corners
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.darkgrey
-                      .withOpacity(0.5), // Slightly transparent
+                  color: AppColors.darkgrey.withOpacity(0.5),
                   blurRadius: 10,
                   spreadRadius: 2,
-                  offset: const Offset(0, 4), // Shadow position
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -65,22 +67,19 @@ class StudentPage extends StatelessWidget {
                     ),
                   ),
                   child: Container(
-                    padding:
-                        const EdgeInsets.all(4), // Space between ring and image
+                    padding: const EdgeInsets.all(4),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
                       color: AppColors.black,
                     ),
                     child: const CircleAvatar(
-                      radius: 50, // Adjust as needed
+                      radius: 50,
                       backgroundImage:
                           AssetImage('assets/icons/MAE_DESMOND_ICON.jpg'),
                     ),
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Name Text
                 const Text(
                   'Desmond',
                   style: TextStyle(
@@ -89,22 +88,19 @@ class StudentPage extends StatelessWidget {
                     color: AppColors.white,
                   ),
                 ),
-
-                // TPNO Text
                 const Text(
-                  'TP123456', // Replace with actual TPNO
+                  'TP123456',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.lightgrey, // Slightly dimmer than name
+                    color: AppColors.lightgrey,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(
-              height: 20), // Adjust space between Container & Upcoming Booking
-          _buildUpcomingBooking(), // Upcoming Booking Widget
+          const SizedBox(height: 20),
+          _buildUpcomingBooking(),
         ],
       ),
       bottomNavigationBar: BottomAppBar(
@@ -114,13 +110,33 @@ class StudentPage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
+              _buildNavItem('assets/icons/MAE_Calender_icon.png', 'Booking', () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StudentBookingPage(),
+                  ),
+                );
+              }),
               _buildNavItem(
-                  'assets/icons/MAE_Calender_icon.png', 'Booking', () {}),
-              _buildNavItem(
-                  'assets/icons/MAE_History_icon.png', 'History', () {}),
-              _buildNavItem('assets/icons/MAE_Home_Icon.png', 'Home', () {}),
-              _buildNavItem(
-                  'assets/icons/MAE_logout_icon.png', 'Logout', () {}),
+                'assets/icons/MAE_History_icon.png',
+                'History',
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudentHistoryPage(), 
+                    ),
+                  );
+                },
+              ),
+              _buildNavItem('assets/icons/MAE_Home_Icon.png', 'Home', () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('You are already on the Home page!')),
+                  );
+                },
+              ),
+              _buildNavItem('assets/icons/MAE_logout_icon.png', 'Logout', () {}),
             ],
           ),
         ),
@@ -184,7 +200,7 @@ class StudentPage extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(iconPath, width: 30, height: 30), // Icon Image
+          Image.asset(iconPath, width: 30, height: 30),
           const SizedBox(height: 4),
           Text(label,
               style: const TextStyle(color: Colors.white, fontSize: 12)),
