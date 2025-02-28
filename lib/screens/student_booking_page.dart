@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
-import 'package:aphub/screens/student_History_page.dart';
+import 'package:aphub/screens/student_history_page.dart';
 
 class StudentBookingPage extends StatelessWidget {
   const StudentBookingPage({super.key});

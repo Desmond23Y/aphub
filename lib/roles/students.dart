@@ -1,4 +1,4 @@
-import 'package:aphub/screens/student_History_page.dart';
+import 'package:aphub/screens/student_history_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/screens/student_booking_page.dart';
