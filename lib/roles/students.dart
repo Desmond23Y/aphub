@@ -1,11 +1,53 @@
-import 'package:aphub/screens/student_history_page.dart';
+import 'package:aphub/screens/student_notification_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:aphub/screens/student_history_page.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/screens/student_booking_page.dart';
 
-class StudentPage extends StatelessWidget {
-  const StudentPage({super.key});
 
+class StudentPage extends StatefulWidget {
+  final String tpNumber;
+  const StudentPage({super.key, required this.tpNumber});
+
+  @override
+  StudentPageState createState() => StudentPageState();
+}
+
+class StudentPageState extends State<StudentPage> {
+  late String name;
+  late String tpNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    tpNumber = widget.tpNumber; // Store the TP Number
+    name = "Loading...";
+    _fetchUserData();
+  }
+
+Future<void> _fetchUserData() async {
+  try {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(tpNumber) // Ensure this matches your Firestore document ID
+        .get();
+
+    if (userDoc.exists) {
+      String fetchedName = userDoc['name'] ?? "Unknown";
+      
+      if (mounted) {
+        setState(() {
+          name = fetchedName;
+        });
+      }
+    } else {
+      debugPrint("User document does not exist.");
+    }
+  } catch (e) {
+    debugPrint("Error fetching user data: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -20,12 +62,19 @@ class StudentPage extends StatelessWidget {
         actions: [
           IconButton(
             padding: const EdgeInsets.only(right: 15),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentNotificationPage(tpNumber: tpNumber),
+                ),
+              );
+            },
             icon: const Image(
               image: AssetImage('assets/icons/MAE_notification_icon.png'),
               width: 35,
             ),
-          )
+          ),
         ],
       ),
       body: Column(
@@ -80,17 +129,17 @@ class StudentPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Desmond',
-                  style: TextStyle(
+                Text(
+                  name, // Display fetched name
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: AppColors.white,
                   ),
                 ),
-                const Text(
-                  'TP123456',
-                  style: TextStyle(
+                Text(
+                  tpNumber, // Display fetched TP number
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     color: AppColors.lightgrey,
@@ -114,7 +163,7 @@ class StudentPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StudentBookingPage(),
+                    builder: (context) => StudentBookingPage(tpNumber: tpNumber),
                   ),
                 );
               }),
@@ -125,7 +174,7 @@ class StudentPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const StudentHistoryPage(), 
+                      builder: (context) => StudentHistoryPage(tpNumber: tpNumber), 
                     ),
                   );
                 },

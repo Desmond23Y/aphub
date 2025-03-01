@@ -77,7 +77,7 @@ class LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixi
       if (password == storedPassword) {
         Widget nextPage;
         if (userRole == 'student') {
-          nextPage = const StudentPage();
+          nextPage = StudentPage(tpNumber: tpNumber);
         } else if (userRole == 'lecturer') {
           nextPage = const LecturerPage();
         } else if (userRole == 'admin') {

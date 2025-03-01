@@ -2,9 +2,15 @@ import 'package:aphub/screens/student_booking_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
+import 'package:aphub/screens/student_notification_page.dart';
+
 
 class StudentHistoryPage extends StatelessWidget {
-  const StudentHistoryPage({super.key});
+  final String tpNumber;
+  
+  const StudentHistoryPage({super.key, required this.tpNumber});
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +24,19 @@ class StudentHistoryPage extends StatelessWidget {
         actions: [
           IconButton(
             padding: const EdgeInsets.only(right: 15),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentNotificationPage(tpNumber: tpNumber),
+                ),
+              );
+            },
             icon: const Image(
               image: AssetImage('assets/icons/MAE_notification_icon.png'),
               width: 35,
             ),
-          )
+          ),
         ],
       ),
       backgroundColor: AppColors.black,
@@ -47,7 +60,7 @@ class StudentHistoryPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StudentBookingPage(),
+                    builder: (context) => StudentBookingPage(tpNumber: tpNumber),
                   ),
                 );
               }),
@@ -65,7 +78,7 @@ class StudentHistoryPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StudentPage(),
+                    builder: (context) => StudentPage(tpNumber: tpNumber),
                   ),
                 );
               }),
@@ -121,7 +134,7 @@ class StudentHistoryPage extends StatelessWidget {
                   DropdownButton<String>(
                     dropdownColor: AppColors.darkgrey,
                     value: selectedFacility,
-                    items: ['All', 'Gym', 'Library', 'Study Room']
+                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(
@@ -226,9 +239,9 @@ class StudentHistoryPage extends StatelessWidget {
                 children: [
                   /// Facility Type Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedFacility,
-                    items: ['All', 'Auditorium', 'Meeting Room', 'Class Room']
+                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(
@@ -246,7 +259,7 @@ class StudentHistoryPage extends StatelessWidget {
 
                   /// Booking Status Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkdarkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedStatus,
                     items: ['All', 'Completed', 'Cancelled']
                         .map((status) => DropdownMenuItem(

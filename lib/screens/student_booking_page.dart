@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
 import 'package:aphub/screens/student_history_page.dart';
+import 'package:aphub/screens/student_notification_page.dart';
 
 class StudentBookingPage extends StatelessWidget {
-  const StudentBookingPage({super.key});
+  final String tpNumber;
+  
+  const StudentBookingPage({super.key, required this.tpNumber});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
         title: const Image(
           image: AssetImage('assets/icons/MAE_APHUB_MENU_ICON.png'),
           width: 90,
@@ -18,12 +21,19 @@ class StudentBookingPage extends StatelessWidget {
         actions: [
           IconButton(
             padding: const EdgeInsets.only(right: 15),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentNotificationPage(tpNumber: tpNumber),
+                ),
+              );
+            },
             icon: const Image(
               image: AssetImage('assets/icons/MAE_notification_icon.png'),
               width: 35,
             ),
-          )
+          ),
         ],
       ),
       backgroundColor: AppColors.black,
@@ -55,7 +65,7 @@ class StudentBookingPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StudentHistoryPage(),
+                    builder: (context) => StudentHistoryPage(tpNumber: tpNumber),
                   ),
                 );
               },
@@ -64,7 +74,7 @@ class StudentBookingPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StudentPage(),
+                    builder: (context) => StudentPage(tpNumber: tpNumber),
                   ),
                 );
               }),
@@ -118,9 +128,9 @@ class StudentBookingPage extends StatelessWidget {
                 children: [
                   /// Facility Type Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedFacility,
-                    items: ['All', 'Gym', 'Library', 'Study Room']
+                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(
@@ -138,7 +148,7 @@ class StudentBookingPage extends StatelessWidget {
 
                   /// Booking Status Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedStatus,
                     items: ['All', 'Upcoming', 'Pending']
                         .map((status) => DropdownMenuItem(
@@ -227,9 +237,9 @@ class StudentBookingPage extends StatelessWidget {
                 children: [
                   /// Facility Type Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedFacility,
-                    items: ['All', 'Classroom', 'Meeting Room', 'Auditorium']
+                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(
@@ -247,7 +257,7 @@ class StudentBookingPage extends StatelessWidget {
 
                   /// Block Filter
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedBlock,
                     items: ['All', 'A', 'B', 'C']
                         .map((block) => DropdownMenuItem(
@@ -265,9 +275,9 @@ class StudentBookingPage extends StatelessWidget {
                     },
                   ),
 
-                  /// Floor Filter
+                  
                   DropdownButton<String>(
-                    dropdownColor: AppColors.darkgrey,
+                    dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedFloor,
                     items: ['All', '1', '2', '3']
                         .map((floor) => DropdownMenuItem(
@@ -289,7 +299,7 @@ class StudentBookingPage extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              /// No Available Facilities Message
+              
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
