@@ -19,61 +19,84 @@ class AdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      // Ensure UI adjusts for system elements
-      child: Scaffold(
-        backgroundColor: AppColors.black,
-        appBar: AppBar(
-          backgroundColor: AppColors.darkdarkgrey,
-          title: const Text('Admin Dashboard',
-              style: TextStyle(color: AppColors.white)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout, color: AppColors.white),
-              onPressed: () => _logout(context),
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionHeader('Facility Utilization'),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Scaffold(
+      backgroundColor: AppColors.black,
+      appBar: AppBar(
+        backgroundColor: AppColors.darkdarkgrey,
+        title: const Text('Admin Dashboard',
+            style: TextStyle(color: AppColors.white)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppColors.white),
+            onPressed: () => _logout(context),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: AppColors.darkdarkgrey,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStatCard('Booked Slots', '45', '+5%'),
-                    _buildStatCard('Available Slots', '20', '-10%'),
+                    _buildSectionHeader('Facility Utilization'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildStatCard('Booked Slots', '45', '+5%'),
+                        _buildStatCard('Available Slots', '20', '-10%'),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                _buildSectionHeader('Upcoming Bookings'),
-                _buildBookingItem('Meeting Room', '13:00 - 14:00', 'John Doe'),
-                _buildBookingItem('Cisco Lab', '15:00 - 16:00', 'Jane Smith'),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: AppColors.darkdarkgrey,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader('Upcoming Bookings'),
+                    _buildBookingItem(
+                        'Meeting Room', '13:00 - 14:00', 'John Doe'),
+                    _buildBookingItem(
+                        'Cisco Lab', '15:00 - 16:00', 'Jane Smith'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        bottomNavigationBar: BottomAppBar(
-          color: AppColors.darkdarkgrey,
-          shape: const CircularNotchedRectangle(),
-          child: SizedBox(
-            height: 60, // Increase height
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavButton(context, Icons.business, 'Venues',
-                    const VenuesManagement()),
-                _buildNavButton(context, Icons.calendar_today, 'Timetables',
-                    const Placeholder()),
-                _buildNavButton(
-                    context, Icons.book, 'Bookings', const Placeholder()),
-                _buildNavButton(
-                    context, Icons.add, 'Add', const CreateVenuePage()),
-              ],
-            ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: AppColors.darkdarkgrey,
+        shape: const CircularNotchedRectangle(),
+        child: SizedBox(
+          height: 60, // Increase height
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavButton(
+                  context, Icons.business, 'Venues', const VenuesManagement()),
+              _buildNavButton(context, Icons.calendar_today, 'Timetables',
+                  const Placeholder()),
+              _buildNavButton(
+                  context, Icons.book, 'Bookings', const Placeholder()),
+              _buildNavButton(
+                  context, Icons.add, 'Add', const CreateVenuePage()),
+            ],
           ),
         ),
       ),
