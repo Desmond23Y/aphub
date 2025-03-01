@@ -4,13 +4,10 @@ import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
 import 'package:aphub/screens/student_notification_page.dart';
 
-
 class StudentHistoryPage extends StatelessWidget {
   final String tpNumber;
-  
+
   const StudentHistoryPage({super.key, required this.tpNumber});
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +25,8 @@ class StudentHistoryPage extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => StudentNotificationPage(tpNumber: tpNumber),
+                  builder: (context) =>
+                      StudentNotificationPage(tpNumber: tpNumber),
                 ),
               );
             },
@@ -60,7 +58,8 @@ class StudentHistoryPage extends StatelessWidget {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => StudentBookingPage(tpNumber: tpNumber),
+                    builder: (context) =>
+                        StudentBookingPage(tpNumber: tpNumber),
                   ),
                 );
               }),
@@ -134,7 +133,13 @@ class StudentHistoryPage extends StatelessWidget {
                   DropdownButton<String>(
                     dropdownColor: AppColors.darkgrey,
                     value: selectedFacility,
-                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
+                    items: [
+                      'All',
+                      'Labs',
+                      'Meeting room',
+                      'Classroom',
+                      'Auditorium'
+                    ]
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(
@@ -241,7 +246,13 @@ class StudentHistoryPage extends StatelessWidget {
                   DropdownButton<String>(
                     dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                     value: selectedFacility,
-                    items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
+                    items: [
+                      'All',
+                      'Labs',
+                      'Meeting room',
+                      'Classroom',
+                      'Auditorium'
+                    ]
                         .map((facility) => DropdownMenuItem(
                               value: facility,
                               child: Text(

@@ -70,7 +70,7 @@ class VenuesManagementState extends State<VenuesManagement> {
                   borderSide: BorderSide.none,
                 ),
               ),
-              items: ["All", "Lecture Hall", "Lab", "Auditorium", "Others"]
+              items: ['All', 'Labs', 'Meeting room', 'Classroom', 'Auditorium']
                   .map((type) => DropdownMenuItem(
                         value: type,
                         child: Text(type,
