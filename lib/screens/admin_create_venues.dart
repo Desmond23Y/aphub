@@ -14,29 +14,35 @@ class CreateVenuePageState extends State<CreateVenuePage> {
   final List<String> _selectedEquipment = [];
 
   final List<String> _availableEquipment = ['Mic', 'Speaker', 'Projector'];
+  final List<String> _venueTypes = [
+    'classroom',
+    'meetingroom',
+    'auditorium',
+    'lab'
+  ];
+  final List<String> _statusOptions = ['available', 'unavailable'];
+
+  String _selectedVenueType = 'classroom';
+  String _selectedStatus = 'available';
 
   Future<void> _saveVenue() async {
-    if (!mounted) return; // Ensure widget is still mounted before proceeding
+    if (!mounted) return;
 
     String location = _locationController.text.trim();
     String capacityText = _capacityController.text.trim();
 
     if (location.isEmpty || capacityText.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please fill in all fields")),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields")),
+      );
       return;
     }
 
     int? capacity = int.tryParse(capacityText);
     if (capacity == null || capacity <= 0) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Enter a valid capacity")),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid capacity")),
+      );
       return;
     }
 
@@ -45,8 +51,6 @@ class CreateVenuePageState extends State<CreateVenuePage> {
 
     try {
       DocumentSnapshot venueDoc = await venues.doc(location).get();
-
-      if (!mounted) return; // Check again after async operation
 
       if (venueDoc.exists) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,17 +63,17 @@ class CreateVenuePageState extends State<CreateVenuePage> {
         "name": location,
         "capacity": capacity,
         "equipment": _selectedEquipment,
+        "venuetype": _selectedVenueType,
+        "status": _selectedStatus,
       });
 
       if (mounted) {
-        Navigator.pop(context); // Go back after saving
+        Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error saving venue: $e")),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error saving venue: $e")),
+      );
     }
   }
 
@@ -111,6 +115,32 @@ class CreateVenuePageState extends State<CreateVenuePage> {
                   },
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedVenueType,
+              decoration: const InputDecoration(labelText: "Venue Type"),
+              items: _venueTypes.map((type) {
+                return DropdownMenuItem(value: type, child: Text(type));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedVenueType = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedStatus,
+              decoration: const InputDecoration(labelText: "Status"),
+              items: _statusOptions.map((status) {
+                return DropdownMenuItem(value: status, child: Text(status));
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedStatus = value!;
+                });
+              },
             ),
             const SizedBox(height: 20),
             ElevatedButton(

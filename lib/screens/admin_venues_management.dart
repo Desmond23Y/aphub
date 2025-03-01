@@ -44,8 +44,23 @@ class VenuesManagementState extends State<VenuesManagement> {
               return Card(
                 child: ListTile(
                   title: Text(venueData['name'] ?? 'Unnamed Venue'),
-                  subtitle: Text(
-                    "Capacity: ${venueData['capacity']}, \nEquipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}",
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Capacity: ${venueData['capacity']}"),
+                      Text(
+                          "Equipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}"),
+                      Text("Venue Type: ${venueData['venuetype'] ?? 'N/A'}"),
+                      Text(
+                        "Status: ${venueData['status'] ?? 'N/A'}",
+                        style: TextStyle(
+                          color: venueData['status'] == 'available'
+                              ? Colors.green
+                              : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
