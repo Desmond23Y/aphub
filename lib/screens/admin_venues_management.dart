@@ -1,4 +1,5 @@
 import 'package:aphub/screens/admin_create_venues.dart';
+import 'package:aphub/screens/admin_update_venues.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -44,7 +45,8 @@ class VenuesManagementState extends State<VenuesManagement> {
                 child: ListTile(
                   title: Text(venueData['name'] ?? 'Unnamed Venue'),
                   subtitle: Text(
-                      "Capacity: ${venueData['capacity']}, \nEquipment: ${venueData['equipment']}"),
+                    "Capacity: ${venueData['capacity']}, \nEquipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}",
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -76,7 +78,14 @@ class VenuesManagementState extends State<VenuesManagement> {
   }
 
   void _editVenue(String venueId, Map<String, dynamic> venueData) {
-    // Navigate to Edit Venue Page (To be implemented)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => EditVenuePage(
+                venueId: venueId,
+                venueData: venueData,
+              )),
+    );
   }
 
   void _deleteVenue(String venueId) {
