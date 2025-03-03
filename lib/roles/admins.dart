@@ -1,3 +1,4 @@
+import 'package:aphub/screens/admin_account_management.dart';
 import 'package:aphub/screens/admin_venues_management.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -94,7 +95,7 @@ class AdminPage extends StatelessWidget {
               _buildNavButton(
                   context, Icons.book, 'Bookings', const Placeholder()),
               _buildNavButton(context, Icons.account_circle, 'Account',
-                  const Placeholder()),
+                  const AccountManagement()),
             ],
           ),
         ),
