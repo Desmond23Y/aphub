@@ -1,4 +1,5 @@
 import 'package:aphub/screens/admin_create_account.dart';
+import 'package:aphub/screens/admin_update_account.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -149,7 +150,18 @@ class AccountManagementState extends State<AccountManagement> {
   }
 
   void _editAccount(String userId, Map<String, dynamic> userData) {
-    // Navigate to edit account page (create this screen separately)
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateAccount(
+          userId: userId,
+          name: userData['name'] ?? '',
+          role: userData['role'] ?? '',
+          password: userData['password'] ?? '',
+          modules: userData['modules'] ?? '',
+        ),
+      ),
+    );
   }
 
   void _deleteAccount(String userId) {
