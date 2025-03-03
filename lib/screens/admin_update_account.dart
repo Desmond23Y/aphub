@@ -49,13 +49,13 @@ class UpdateAccountState extends State<UpdateAccount> {
         'password': _passwordController.text.trim(),
       };
 
-      if (widget.role == 'lecturer') {
+      if (widget.role == 'Lecturer') {
         updatedData['modules'] = _modulesController.text.isNotEmpty
             ? _modulesController.text.split(',').map((e) => e.trim()).toList()
             : [];
       } else {
         updatedData['modules'] =
-            FieldValue.delete(); // Remove modules if not a lecturer
+            FieldValue.delete();
       }
 
       await FirebaseFirestore.instance

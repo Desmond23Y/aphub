@@ -77,11 +77,11 @@ class LoginPageState extends State<LoginPage>
 
       if (password == storedPassword) {
         Widget nextPage;
-        if (userRole == 'student') {
+        if (userRole == 'Student') {
           nextPage = StudentPage(tpNumber: tpNumber);
-        } else if (userRole == 'lecturer') {
+        } else if (userRole == 'Lecturer') {
           nextPage = const LecturerPage();
-        } else if (userRole == 'admin') {
+        } else if (userRole == 'Admin') {
           nextPage = const AdminPage();
         } else {
           if (!mounted) return;

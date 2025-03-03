@@ -15,6 +15,7 @@ class AccountManagementState extends State<AccountManagement> {
       FirebaseFirestore.instance.collection("users");
 
   String _searchQuery = "";
+  String _selectedRole = "All";
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +54,36 @@ class AccountManagementState extends State<AccountManagement> {
               },
             ),
           ),
+          const SizedBox(height: 10),
+          // Role Filter Dropdown
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: DropdownButtonFormField<String>(
+              value: _selectedRole,
+              dropdownColor: Colors.grey[800],
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[800],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              style: const TextStyle(color: Colors.white),
+              items: ["All", "Student", "Lecturer", "Admin"]
+                  .map((role) => DropdownMenuItem(
+                        value: role,
+                        child: Text(role,
+                            style: const TextStyle(color: Colors.white)),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedRole = value!;
+                });
+              },
+            ),
+          ),
 
           const SizedBox(height: 10),
 
@@ -73,14 +104,27 @@ class AccountManagementState extends State<AccountManagement> {
 
                 List<QueryDocumentSnapshot> users = snapshot.data!.docs;
 
-                // Apply search filter
+                // Apply search filter and role filter
                 users = users.where((user) {
                   Map<String, dynamic> userData =
                       user.data() as Map<String, dynamic>;
-                  String name = (userData['name'] ?? '').toLowerCase();
+
+                  String name = (userData['name'] ?? '')
+                      .toLowerCase(); // Access name at top-level
+                  String role = (userData['role'] ?? '')
+                      .toLowerCase(); // Try accessing role at top-level first
+
+                  // If role is inside "modules", fetch from there
+                  if (role.isEmpty && userData.containsKey('modules')) {
+                    role = (userData['modules']['role'] ?? '').toLowerCase();
+                  }
+
                   bool matchesSearch =
                       _searchQuery.isEmpty || name.contains(_searchQuery);
-                  return matchesSearch;
+                  bool matchesRole = _selectedRole == "All" ||
+                      role == _selectedRole.toLowerCase();
+
+                  return matchesSearch && matchesRole;
                 }).toList();
 
                 return ListView.builder(
@@ -109,11 +153,12 @@ class AccountManagementState extends State<AccountManagement> {
                           children: [
                             Text("TP Number: $userId",
                                 style: const TextStyle(color: Colors.white70)),
-                            Text("Role: ${userData['role']}",
+                            Text(
+                                "Role: ${userData['role'] ?? userData['modules']?['role'] ?? 'No role'}",
                                 style: const TextStyle(color: Colors.white70)),
                             Text("Email: ${userData['email'] ?? 'No email'}",
                                 style: const TextStyle(color: Colors.white70)),
-                            if (userData['role'] == 'lecturer')
+                            if (userData['role'] == 'Lecturer')
                               Text(
                                   "Modules: ${userData['modules'] ?? 'Not assigned'}",
                                   style:
@@ -175,7 +220,34 @@ class AccountManagementState extends State<AccountManagement> {
   }
 
   void _deleteAccount(String userId) {
-    _usersRef.doc(userId).delete();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Confirm Deletion",
+              style: TextStyle(color: Colors.white)),
+          content: const Text("Are you sure you want to delete this account?",
+              style: TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child:
+                  const Text("Cancel", style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () {
+                _usersRef.doc(userId).delete();
+                Navigator.of(context).pop(); // Close the dialog after deletion
+              },
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _createAccount() {

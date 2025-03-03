@@ -55,7 +55,7 @@ class VenuesManagementState extends State<VenuesManagement> {
               },
             ),
           ),
-
+          const SizedBox(height: 10),
           // Dropdown Filter
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

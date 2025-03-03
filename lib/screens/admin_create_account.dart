@@ -12,18 +12,22 @@ class CreateAccountState extends State<CreateAccount> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _userIdController = TextEditingController();
+  final TextEditingController _userIdController =
+      TextEditingController(text: "TP");
   final TextEditingController _modulesController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController =
+      TextEditingController(text: "TP@mail.apu.edu.my");
 
-  String _selectedRole = 'student';
+  String _selectedRole = 'Student';
 
   String _getPrefix(String role) {
     switch (role) {
-      case 'admin':
+      case 'Admin':
         return 'A';
-      case 'lecturer':
+      case 'Lecturer':
         return 'L';
+      case 'Student':
+        return 'TP';
       default:
         return 'TP';
     }
@@ -84,13 +88,12 @@ class CreateAccountState extends State<CreateAccount> {
       if (await _isDuplicateAccount(userId, name)) return;
 
       try {
-        // **Ensure email is stored**
         Map<String, dynamic> userData = {
           'name': name,
-          'email': email, // ✅ Ensure email is included
+          'email': email,
           'password': password,
           'role': _selectedRole,
-          'modules': _selectedRole == 'lecturer'
+          'modules': _selectedRole == 'Lecturer'
               ? modules.split(",").map((e) => e.trim()).toList()
               : [],
         };
@@ -138,10 +141,10 @@ class CreateAccountState extends State<CreateAccount> {
                 dropdownColor: Colors.grey[900],
                 decoration: _inputDecoration("Role"),
                 style: const TextStyle(color: Colors.white),
-                items: ['admin', 'lecturer', 'student']
+                items: ['Admin', 'Lecturer', 'Student']
                     .map((role) => DropdownMenuItem(
                           value: role,
-                          child: Text(role.toUpperCase(),
+                          child: Text(role,
                               style: const TextStyle(color: Colors.white)),
                         ))
                     .toList(),
@@ -194,7 +197,7 @@ class CreateAccountState extends State<CreateAccount> {
               const SizedBox(height: 20),
 
               // Modules Field (Only for Lecturers)
-              if (_selectedRole == 'lecturer') ...[
+              if (_selectedRole == 'Lecturer') ...[
                 TextFormField(
                   controller: _modulesController,
                   style: const TextStyle(color: Colors.white),
