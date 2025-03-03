@@ -28,6 +28,7 @@ class VenuesManagementState extends State<VenuesManagement> {
           style: TextStyle(color: AppColors.white),
         ),
         backgroundColor: AppColors.darkdarkgrey,
+        iconTheme: const IconThemeData(color: AppColors.white),
       ),
       body: Column(
         children: [

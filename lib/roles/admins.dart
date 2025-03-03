@@ -1,4 +1,3 @@
-import 'package:aphub/screens/admin_create_venues.dart';
 import 'package:aphub/screens/admin_venues_management.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,7 +46,7 @@ class AdminPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionHeader('Facility Utilization'),
+                    _buildSectionHeader('Venues Utilization'),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -94,8 +93,8 @@ class AdminPage extends StatelessWidget {
                   const Placeholder()),
               _buildNavButton(
                   context, Icons.book, 'Bookings', const Placeholder()),
-              _buildNavButton(
-                  context, Icons.add, 'Add', const CreateVenuePage()),
+              _buildNavButton(context, Icons.account_circle, 'Account',
+                  const Placeholder()),
             ],
           ),
         ),
