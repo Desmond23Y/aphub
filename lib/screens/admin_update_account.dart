@@ -26,7 +26,7 @@ class UpdateAccountState extends State<UpdateAccount> {
   late TextEditingController _nameController;
   late TextEditingController _passwordController;
   late TextEditingController _modulesController;
-  String? _selectedRole;
+  late String _email;
 
   @override
   void initState() {
@@ -34,7 +34,9 @@ class UpdateAccountState extends State<UpdateAccount> {
     _nameController = TextEditingController(text: widget.name);
     _passwordController = TextEditingController(text: widget.password);
     _modulesController = TextEditingController(text: widget.modules ?? '');
-    _selectedRole = widget.role;
+
+    // Auto-generate email based on user ID
+    _email = "${widget.userId}@mail.apu.edu.my";
   }
 
   Future<void> _updateAccount() async {
@@ -43,14 +45,17 @@ class UpdateAccountState extends State<UpdateAccount> {
     try {
       Map<String, dynamic> updatedData = {
         'name': _nameController.text.trim(),
+        'email': _email, // Ensure email is updated
         'password': _passwordController.text.trim(),
-        'role': _selectedRole, // Ensure role is included
       };
 
-      if (_selectedRole == 'lecturer') {
-        updatedData['modules'] = _modulesController.text.trim();
+      if (widget.role == 'lecturer') {
+        updatedData['modules'] = _modulesController.text.isNotEmpty
+            ? _modulesController.text.split(',').map((e) => e.trim()).toList()
+            : [];
       } else {
-        updatedData.remove('modules'); // Remove 'modules' for non-lecturers
+        updatedData['modules'] =
+            FieldValue.delete(); // Remove modules if not a lecturer
       }
 
       await FirebaseFirestore.instance
@@ -90,27 +95,25 @@ class UpdateAccountState extends State<UpdateAccount> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Role Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                dropdownColor: Colors.grey[900],
-                decoration: _inputDecoration("Role"),
+              // Role (Read-only)
+              TextFormField(
+                initialValue: widget.role.toUpperCase(),
+                readOnly: true,
                 style: const TextStyle(color: Colors.white),
-                items: [
-                  DropdownMenuItem(
-                    value: _selectedRole,
-                    child: Text(
-                      _selectedRole!.toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-                onChanged: null, // 🔥 Disables selection
+                decoration: _inputDecoration("Role"),
               ),
-
               const SizedBox(height: 20),
 
-              // Name Field
+              // User ID (Read-only)
+              TextFormField(
+                initialValue: widget.userId,
+                readOnly: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration("User ID"),
+              ),
+              const SizedBox(height: 20),
+
+              // Name (Editable)
               TextFormField(
                 controller: _nameController,
                 style: const TextStyle(color: Colors.white),
@@ -120,8 +123,17 @@ class UpdateAccountState extends State<UpdateAccount> {
               ),
               const SizedBox(height: 20),
 
-              // Modules Field (Only for Lecturers)
-              if (_selectedRole == 'lecturer') ...[
+              // Email (Read-only)
+              TextFormField(
+                initialValue: _email,
+                readOnly: true,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration("Email"),
+              ),
+              const SizedBox(height: 20),
+
+              // Modules (Only for lecturers)
+              if (widget.role == 'lecturer') ...[
                 TextFormField(
                   controller: _modulesController,
                   style: const TextStyle(color: Colors.white),
@@ -132,7 +144,7 @@ class UpdateAccountState extends State<UpdateAccount> {
                 const SizedBox(height: 20),
               ],
 
-              // Password Field
+              // Password (Editable)
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,

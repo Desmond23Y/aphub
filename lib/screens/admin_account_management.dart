@@ -111,6 +111,16 @@ class AccountManagementState extends State<AccountManagement> {
                                 style: const TextStyle(color: Colors.white70)),
                             Text("Role: ${userData['role']}",
                                 style: const TextStyle(color: Colors.white70)),
+                            Text("Email: ${userData['email'] ?? 'No email'}",
+                                style: const TextStyle(color: Colors.white70)),
+                            if (userData['role'] == 'lecturer')
+                              Text(
+                                  "Modules: ${userData['modules'] ?? 'Not assigned'}",
+                                  style:
+                                      const TextStyle(color: Colors.white70)),
+                            Text(
+                                "Password: ${userData['password'] ?? 'Not available'}",
+                                style: const TextStyle(color: Colors.white70)),
                           ],
                         ),
                         trailing: Row(

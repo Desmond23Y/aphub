@@ -14,8 +14,9 @@ class CreateAccountState extends State<CreateAccount> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _userIdController = TextEditingController();
   final TextEditingController _modulesController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
-  String _selectedRole = 'student'; // Default role
+  String _selectedRole = 'student';
 
   String _getPrefix(String role) {
     switch (role) {
@@ -35,6 +36,7 @@ class CreateAccountState extends State<CreateAccount> {
 
     setState(() {
       _userIdController.text = "$prefix$currentInput";
+      _emailController.text = "${_userIdController.text}@mail.apu.edu.my";
     });
   }
 
@@ -69,6 +71,7 @@ class CreateAccountState extends State<CreateAccount> {
     if (_formKey.currentState!.validate()) {
       String userId = _userIdController.text.trim();
       String name = _nameController.text.trim();
+      String email = _emailController.text.trim(); // Ensure email is included
       String password = _passwordController.text.trim();
       String modules = _modulesController.text.trim();
 
@@ -81,16 +84,16 @@ class CreateAccountState extends State<CreateAccount> {
       if (await _isDuplicateAccount(userId, name)) return;
 
       try {
+        // **Ensure email is stored**
         Map<String, dynamic> userData = {
           'name': name,
+          'email': email, // ✅ Ensure email is included
           'password': password,
           'role': _selectedRole,
+          'modules': _selectedRole == 'lecturer'
+              ? modules.split(",").map((e) => e.trim()).toList()
+              : [],
         };
-
-        // Add modules field only if role is Lecturer
-        if (_selectedRole == 'lecturer' && modules.isNotEmpty) {
-          userData['modules'] = modules;
-        }
 
         await FirebaseFirestore.instance
             .collection("users")
@@ -145,8 +148,8 @@ class CreateAccountState extends State<CreateAccount> {
                 onChanged: (value) {
                   setState(() {
                     _selectedRole = value!;
+                    _updateUserIdPrefix(); // Update User ID and Email when role changes
                   });
-                  _updateUserIdPrefix();
                 },
               ),
               const SizedBox(height: 20),
@@ -156,7 +159,9 @@ class CreateAccountState extends State<CreateAccount> {
                 controller: _userIdController,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration("User ID (Prefix + 6 Digits)"),
-                onChanged: (value) => _updateUserIdPrefix(),
+                onChanged: (value) {
+                  _updateUserIdPrefix();
+                },
                 validator: (value) {
                   if (value == null ||
                       !RegExp(r'^[A-Z]{1,2}[0-9]{6}$').hasMatch(value)) {
@@ -165,6 +170,7 @@ class CreateAccountState extends State<CreateAccount> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 20),
 
               // Name Field
@@ -175,6 +181,16 @@ class CreateAccountState extends State<CreateAccount> {
                 validator: (value) =>
                     value!.isEmpty ? 'Name is required' : null,
               ),
+              const SizedBox(height: 20),
+
+              // Email Field
+              TextFormField(
+                controller: _emailController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration("Email"),
+                readOnly: true, // Prevent user from editing
+              ),
+
               const SizedBox(height: 20),
 
               // Modules Field (Only for Lecturers)
@@ -192,7 +208,7 @@ class CreateAccountState extends State<CreateAccount> {
               // Password Field
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: false,
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration("Password"),
                 validator: (value) =>
