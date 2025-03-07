@@ -10,137 +10,153 @@ class CreateModuleScreen extends StatefulWidget {
 
 class CreateModuleScreenState extends State<CreateModuleScreen> {
   final TextEditingController _moduleNameController = TextEditingController();
-  String? _selectedLecturer;
-  String? _selectedTimeSlot;
-  final List<String> _timeSlots = ["1hr", "1hr30min", "1hr45min", "2hrs"];
-  final CollectionReference _lecturersRef =
-      FirebaseFirestore.instance.collection("users");
+  String? _selectedDuration;
+  String? _selectedLecturerId;
+  String? _selectedLecturerName;
+
+  bool _isSaving = false; // Prevents duplicate requests
+
   final CollectionReference _modulesRef =
       FirebaseFirestore.instance.collection("modules");
+  final CollectionReference _usersRef =
+      FirebaseFirestore.instance.collection("users");
+
+  final List<String> _durations = [
+    "1 hour",
+    "1 hour 30 minutes",
+    "1 hour 45 minutes",
+    "2 hours"
+  ];
+
+  Future<void> _createModule() async {
+    if (_moduleNameController.text.isEmpty || _selectedDuration == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Module name and duration are required")),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _modulesRef.add({
+        "moduleName": _moduleNameController.text,
+        "duration": _selectedDuration,
+        "lecturerName": _selectedLecturerName ?? "Unassigned",
+        "lecturerId": _selectedLecturerId ?? "",
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Module created successfully")),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Create Module"),
-        backgroundColor: Colors.grey[900],
-      ),
-      backgroundColor: Colors.black,
+      appBar: AppBar(title: const Text("Create Module")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: _moduleNameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Module Name",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              decoration: const InputDecoration(labelText: "Module Name"),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
+
+            // Duration Dropdown
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(labelText: "Duration"),
+              value: _selectedDuration,
+              items: _durations
+                  .map((duration) => DropdownMenuItem(
+                        value: duration,
+                        child: Text(duration),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedDuration = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
             StreamBuilder<QuerySnapshot>(
-              stream: _lecturersRef
-                  .where("role", isEqualTo: "Lecturer")
-                  .snapshots(),
+              stream:
+                  _usersRef.where("role", isEqualTo: "Lecturer").snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
+                  return const Center(child: CircularProgressIndicator());
                 }
-                var lecturers = snapshot.data!.docs;
+
+                List<QueryDocumentSnapshot> lecturers = snapshot.data!.docs;
+
+                if (lecturers.isEmpty) {
+                  return const Text("No lecturers available");
+                }
+
                 return DropdownButtonFormField<String>(
-                  dropdownColor: Colors.grey[800],
-                  value: _selectedLecturer,
-                  decoration: InputDecoration(
-                    labelText: "Assign Lecturer",
-                    labelStyle: const TextStyle(color: Colors.white),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  items: lecturers.map((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
-                    return DropdownMenuItem(
-                      value: doc.id,
-                      child: Text(data['name'] ?? 'Unknown',
-                          style: const TextStyle(color: Colors.white)),
+                  decoration:
+                      const InputDecoration(labelText: "Select Lecturer"),
+                  value: _selectedLecturerId,
+                  items: lecturers.map((lecturer) {
+                    final data = lecturer.data() as Map<String, dynamic>;
+
+                    return DropdownMenuItem<String>(
+                      value: lecturer.id,
+                      child: Text(data["name"] ?? "Unknown"),
                     );
                   }).toList(),
                   onChanged: (value) {
+                    final selectedLecturer = lecturers.firstWhere(
+                      (lecturer) => lecturer.id == value,
+                    );
+
+                    final lecturerData =
+                        selectedLecturer.data() as Map<String, dynamic>;
+
                     setState(() {
-                      _selectedLecturer = value;
+                      _selectedLecturerId = value;
+                      _selectedLecturerName = lecturerData["name"];
                     });
                   },
                 );
               },
             ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              dropdownColor: Colors.grey[800],
-              value: _selectedTimeSlot,
-              decoration: InputDecoration(
-                labelText: "Select Time Slot",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              items: _timeSlots.map((slot) {
-                return DropdownMenuItem(
-                  value: slot,
-                  child:
-                      Text(slot, style: const TextStyle(color: Colors.white)),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedTimeSlot = value;
-                });
-              },
-            ),
+
             const SizedBox(height: 20),
+
+            // Create Button
             ElevatedButton(
-              onPressed: _createModule,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text("Create Module",
-                  style: TextStyle(color: Colors.white)),
+              onPressed: _isSaving ? null : _createModule,
+              child: _isSaving
+                  ? const CircularProgressIndicator()
+                  : const Text("Create Module"),
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _createModule() async {
-    if (_moduleNameController.text.isEmpty ||
-        _selectedLecturer == null ||
-        _selectedTimeSlot == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
-      return;
-    }
-
-    await _modulesRef.add({
-      "name": _moduleNameController.text,
-      "lecturer": _selectedLecturer,
-      "timeSlot": _selectedTimeSlot,
-    });
-
-    if (!mounted) return;
-    Navigator.pop(context);
   }
 }

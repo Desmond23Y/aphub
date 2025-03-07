@@ -70,7 +70,10 @@ class ModuleManagementState extends State<ModuleManagement> {
                 List<QueryDocumentSnapshot> modules = snapshot.data!.docs;
                 modules = modules.where((module) {
                   String moduleName =
-                      (module["moduleName"] ?? "").toLowerCase();
+                      (module.data() as Map<String, dynamic>?)?["moduleName"]
+                              ?.toString()
+                              .toLowerCase() ??
+                          "";
                   return _searchQuery.isEmpty ||
                       moduleName.contains(_searchQuery);
                 }).toList();
@@ -94,7 +97,8 @@ class ModuleManagementState extends State<ModuleManagement> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Duration: ${module["duration"] ?? 'N/A'}",
+                            Text(
+                                "Duration: ${(module.data() as Map<String, dynamic>?)?["duration"] ?? 'N/A'}",
                                 style: const TextStyle(color: Colors.white70)),
                             Text(
                                 "Lecturer: ${module["lecturerName"] ?? 'Unassigned'}",
@@ -138,20 +142,34 @@ class ModuleManagementState extends State<ModuleManagement> {
     );
   }
 
-  void _editModule(DocumentSnapshot module) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditModuleScreen(
-          moduleId: module.id,
-          moduleName: module["moduleName"] ?? "Unknown",
-          timeSlot: module["timeSlot"] ?? "Not Set", // Ensure this is added
-          duration: module["duration"] ?? "N/A",
-          lecturerId: module["lecturerId"] ?? "",
-          lecturerName: module["lecturerName"] ?? "Unassigned",
+  void _editModule(DocumentSnapshot module) async {
+    Map<String, dynamic>? data = module.data() as Map<String, dynamic>?;
+
+    String lecturerId = data?["lecturerId"] ?? "";
+    String lecturerName = data?["lecturerName"] ?? "Unassigned";
+
+    if (lecturerId.isNotEmpty) {
+      DocumentSnapshot lecturerSnapshot = await _usersRef.doc(lecturerId).get();
+      Map<String, dynamic>? lecturerData =
+          lecturerSnapshot.data() as Map<String, dynamic>?;
+
+      lecturerName = lecturerData?["name"] ?? "Unassigned";
+    }
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EditModuleScreen(
+            moduleId: module.id,
+            moduleName: data?["moduleName"] ?? "Unknown",
+            duration: data?["duration"]?.toString() ?? "N/A",
+            lecturerId: lecturerId,
+            lecturerName: lecturerName,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   void _deleteModule(String moduleId) {

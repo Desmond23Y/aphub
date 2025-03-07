@@ -1,22 +1,20 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EditModuleScreen extends StatefulWidget {
   final String moduleId;
   final String moduleName;
-  final String timeSlot; // Ensure this exists
-  final String duration; // Ensure this exists
+  final String duration;
+  final String lecturerName;
   final String lecturerId;
-  final String lecturerName; // Ensure this exists
 
   const EditModuleScreen({
     super.key,
     required this.moduleId,
     required this.moduleName,
-    required this.timeSlot, // Add this
-    required this.duration, // Add this
+    required this.duration,
+    required this.lecturerName,
     required this.lecturerId,
-    required this.lecturerName, // Add this
   });
 
   @override
@@ -24,154 +22,96 @@ class EditModuleScreen extends StatefulWidget {
 }
 
 class EditModuleScreenState extends State<EditModuleScreen> {
-  final TextEditingController _moduleNameController = TextEditingController();
-  String? _selectedLecturer;
-  String? _selectedTimeSlot;
-  final List<String> _timeSlots = ["1hr", "1hr30min", "1hr45min", "2hrs"];
-  List<Map<String, String>> _lecturers = [];
+  late TextEditingController _moduleNameController;
+  late TextEditingController _durationController;
+  late TextEditingController _lecturerNameController;
+  late TextEditingController _lecturerIdController;
+  bool _isUpdating = false; // Prevent duplicate updates
+
+  final CollectionReference _modulesRef =
+      FirebaseFirestore.instance.collection("modules");
 
   @override
   void initState() {
     super.initState();
-    _moduleNameController.text = widget.moduleName;
-    _selectedLecturer = widget.lecturerId;
-    _selectedTimeSlot = widget.timeSlot;
-    _fetchLecturers();
+    _moduleNameController = TextEditingController(text: widget.moduleName);
+    _durationController = TextEditingController(text: widget.duration);
+    _lecturerNameController = TextEditingController(text: widget.lecturerName);
+    _lecturerIdController = TextEditingController(text: widget.lecturerId);
   }
 
-  Future<void> _fetchLecturers() async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('role', isEqualTo: 'Lecturer')
-        .get();
+  Future<void> _updateModule() async {
+    if (_moduleNameController.text.isEmpty ||
+        _durationController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Module name and duration are required")),
+      );
+      return;
+    }
 
-    if (!mounted) return;
     setState(() {
-      _lecturers = querySnapshot.docs
-          .map((doc) => {
-                'id': doc.id,
-                'name': doc['name'] as String,
-              })
-          .toList();
+      _isUpdating = true;
     });
-  }
 
-  void _updateModule() {
-    FirebaseFirestore.instance
-        .collection('modules')
-        .doc(widget.moduleId)
-        .update({
-      'moduleName': _moduleNameController.text,
-      'lecturerId': _selectedLecturer,
-      'timeSlot': _selectedTimeSlot,
-    }).then((_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Module updated successfully!')),
-      );
-      Navigator.pop(context);
-    }).catchError((error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating module: $error')),
-      );
-    });
+    try {
+      await _modulesRef.doc(widget.moduleId).update({
+        "moduleName": _moduleNameController.text,
+        "duration": _durationController.text,
+        "lecturerName": _lecturerNameController.text,
+        "lecturerId": _lecturerIdController.text,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Module updated successfully")),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Edit Module"),
-        backgroundColor: Colors.grey[900],
-      ),
-      backgroundColor: Colors.black,
+      appBar: AppBar(title: const Text("Edit Module")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _moduleNameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: "Module Name",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+              decoration: const InputDecoration(labelText: "Module Name"),
             ),
-            const SizedBox(height: 10),
-
-            /// Time Slot Dropdown
-            DropdownButtonFormField<String>(
-              dropdownColor: Colors.grey[800],
-              value: _selectedTimeSlot ?? _timeSlots.first,
-              decoration: InputDecoration(
-                labelText: "Time Slot",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              items: _timeSlots.map((slot) {
-                return DropdownMenuItem<String>(
-                  value: slot,
-                  child:
-                      Text(slot, style: const TextStyle(color: Colors.white)),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedTimeSlot = value;
-                });
-              },
+            TextField(
+              controller: _durationController,
+              decoration: const InputDecoration(labelText: "Duration"),
             ),
-            const SizedBox(height: 10),
-
-            /// Lecturer Dropdown
-            DropdownButtonFormField<String>(
-              dropdownColor: Colors.grey[800],
-              value: _selectedLecturer,
-              decoration: InputDecoration(
-                labelText: "Assign Lecturer",
-                labelStyle: const TextStyle(color: Colors.white),
-                filled: true,
-                fillColor: Colors.grey[800],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              items: _lecturers.map((lecturer) {
-                return DropdownMenuItem<String>(
-                  value: lecturer['id'],
-                  child: Text(
-                    lecturer['name'] ?? "Unknown",
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedLecturer = value;
-                });
-              },
+            TextField(
+              controller: _lecturerNameController,
+              decoration: const InputDecoration(labelText: "Lecturer Name"),
+            ),
+            TextField(
+              controller: _lecturerIdController,
+              decoration: const InputDecoration(labelText: "Lecturer ID"),
             ),
             const SizedBox(height: 20),
-
-            /// Update Button
             ElevatedButton(
-              onPressed: _updateModule,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text("Update Module",
-                  style: TextStyle(color: Colors.white)),
+              onPressed: _isUpdating ? null : _updateModule,
+              child: _isUpdating
+                  ? const CircularProgressIndicator()
+                  : const Text("Update Module"),
             ),
           ],
         ),
