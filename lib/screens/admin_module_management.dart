@@ -1,5 +1,4 @@
 import 'package:aphub/screens/admin_create_module.dart';
-import 'package:aphub/screens/admin_generate_timeslots.dart';
 import 'package:aphub/screens/admin_update_module.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -30,50 +29,29 @@ class ModuleManagementState extends State<ModuleManagement> {
         ),
         backgroundColor: Colors.grey[900],
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.schedule, color: Colors.white),
-            onPressed: _generateTimeSlots, // Call the function
-            tooltip: "Generate Time Slots",
-          ),
-        ],
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                TextField(
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: Colors.white),
-                    hintText: "Search modules...",
-                    hintStyle: const TextStyle(color: Colors.white60),
-                    filled: true,
-                    fillColor: Colors.grey[800],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.toLowerCase();
-                    });
-                  },
+            child: TextField(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                hintText: "Search modules...",
+                hintStyle: const TextStyle(color: Colors.white60),
+                filled: true,
+                fillColor: Colors.grey[800],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(height: 10), // Spacing
-                ElevatedButton.icon(
-                  onPressed: _generateTimeSlots,
-                  icon: const Icon(Icons.schedule),
-                  label: const Text("Generate Weekly Time Slots"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
             ),
           ),
           Expanded(
@@ -221,29 +199,5 @@ class ModuleManagementState extends State<ModuleManagement> {
         );
       },
     );
-  }
-
-  void _generateTimeSlots() async {
-    try {
-      await generateWeeklyTimeSlots();
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Time slots generated successfully!"),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: $error"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 }
