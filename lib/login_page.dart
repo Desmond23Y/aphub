@@ -80,7 +80,7 @@ class LoginPageState extends State<LoginPage>
         if (userRole == 'Student') {
           nextPage = StudentPage(tpNumber: tpNumber);
         } else if (userRole == 'Lecturer') {
-          nextPage = const LecturerPage();
+          nextPage = LecturerPage(tpNumber: tpNumber);
         } else if (userRole == 'Admin') {
           nextPage = const AdminPage();
         } else {
