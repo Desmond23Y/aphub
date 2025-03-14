@@ -1,4 +1,5 @@
 import 'package:aphub/screens/admin_account_management.dart';
+import 'package:aphub/screens/admin_booking_management.dart';
 import 'package:aphub/screens/admin_module_management.dart';
 import 'package:aphub/screens/admin_timetable_management.dart';
 import 'package:aphub/screens/admin_venues_management.dart';
@@ -96,8 +97,8 @@ class AdminPage extends StatelessWidget {
                   const ModuleManagement()),
               _buildNavButton(context, Icons.calendar_today, 'Timetables',
                   const TimeSlotManagement()),
-              _buildNavButton(
-                  context, Icons.book, 'Bookings', const Placeholder()),
+              _buildNavButton(context, Icons.book, 'Bookings',
+                  const AdminBookingManagement()),
               _buildNavButton(context, Icons.account_circle, 'Account',
                   const AccountManagement()),
             ],

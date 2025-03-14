@@ -50,6 +50,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
   ];
 
   bool isGenerating = false; // Track if time slots are being generated
+  String searchQuery = ""; // For search functionality
 
   @override
   void initState() {
@@ -78,11 +79,11 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
     );
 
     if (picked != null) {
-      if (!mounted) return; // Ensure the widget is still in the tree
+      if (!mounted) return;
       setState(() {
         selectedWeek = _getStartOfWeek(picked);
       });
-      _generateTimeslotsForAllVenues(); // Remove `context` from function call
+      _generateTimeslotsForAllVenues();
     }
   }
 
@@ -123,7 +124,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
             "endTime": endTime,
           });
 
-          if (!mounted) return; // Ensure widget is still in the tree
+          if (!mounted) return;
         }
       }
     }
@@ -159,41 +160,23 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              _showSearchDialog(context);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            onPressed: () {
+              _showFilterDialog(context);
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Filters Section
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildDropdown("Type", venueTypeOptions, selectedVenueType,
-                        (value) {
-                      setState(() {
-                        selectedVenueType = value;
-                      });
-                    }),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildDateDropdown(),
-                    _buildDropdown("Time", timeSlots, selectedTime, (value) {
-                      setState(() {
-                        selectedTime = value;
-                      });
-                    }),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
           Expanded(
             child: isGenerating
                 ? const Center(
@@ -215,7 +198,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                         );
                       }
 
-                      // Filter results based on selected filters
+                      // Filter results based on selected filters and search query
                       List<Map<String, dynamic>> filteredSlots = snapshot
                           .data!.docs
                           .map((doc) => doc.data() as Map<String, dynamic>)
@@ -228,8 +211,11 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                   slot["date"] == selectedDate) &&
                               (selectedTime == null ||
                                   selectedTime == "All" ||
-                                  slot["startTime"] ==
-                                      selectedTime)) // Filter by start time
+                                  slot["startTime"] == selectedTime) &&
+                              (searchQuery.isEmpty ||
+                                  slot["venueName"]
+                                      .toLowerCase()
+                                      .contains(searchQuery.toLowerCase())))
                           .toList();
 
                       if (filteredSlots.isEmpty) {
@@ -298,8 +284,18 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                       return ListTile(
                                         title: Text(
                                           "${slot["startTime"]} - ${slot["endTime"]}",
-                                          style: const TextStyle(
+                                          style: TextStyle(
+                                              color:
+                                                  slot["status"] == "available"
+                                                      ? Colors.green
+                                                      : Colors.red),
+                                        ),
+                                        trailing: IconButton(
+                                          icon: const Icon(Icons.info_outline,
                                               color: Colors.white),
+                                          onPressed: () {
+                                            _showVenueInfoDialog(context, slot);
+                                          },
                                         ),
                                       );
                                     }).toList(),
@@ -322,6 +318,117 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
             style: TextStyle(color: Colors.white)),
         onPressed: () => _selectWeek(context),
       ),
+    );
+  }
+
+  void _showVenueInfoDialog(BuildContext context, Map<String, dynamic> slot) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: Text(
+            slot["venueName"],
+            style: const TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Block: ${slot["block"]}",
+                  style: const TextStyle(color: Colors.white)),
+              Text("Level: ${slot["level"]}",
+                  style: const TextStyle(color: Colors.white)),
+              Text("Venue Type: ${slot["venueType"]}",
+                  style: const TextStyle(color: Colors.white)),
+              Text("Capacity: ${slot["capacity"]}",
+                  style: const TextStyle(color: Colors.white)),
+              Text("Equipment: ${slot["equipment"].join(", ")}",
+                  style: const TextStyle(color: Colors.white)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSearchDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Search Venues",
+              style: TextStyle(color: Colors.white)),
+          content: TextField(
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: "Enter venue name...",
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.grey[900],
+          title: const Text("Filters", style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDropdown("Type", venueTypeOptions, selectedVenueType,
+                  (value) {
+                setState(() {
+                  selectedVenueType = value;
+                });
+              }),
+              const SizedBox(height: 10),
+              _buildDateDropdown(),
+              const SizedBox(height: 10),
+              _buildDropdown("Time", timeSlots, selectedTime, (value) {
+                setState(() {
+                  selectedTime = value;
+                });
+              }),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Close", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 
