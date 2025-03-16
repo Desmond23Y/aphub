@@ -19,6 +19,82 @@ class LecturerBookingPageState extends State<LecturerBookingPage> {
   String _selectedVenueType = "All";
   String? _selectedDate;
 
+  Future<String?> _showPurposeDialog(List<dynamic> modules) async {
+    String? selectedPurpose;
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Select Purpose"),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return DropdownButton<String>(
+                value: selectedPurpose,
+                isExpanded: true,
+                hint: const Text("Choose a purpose"),
+                items: [
+                  ...modules.map((module) => DropdownMenuItem(
+                        value: module.toString(),
+                        child: Text(module.toString()),
+                      )),
+                  const DropdownMenuItem(
+                    value: "Event",
+                    child: Text("Event"),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedPurpose = value;
+                  });
+                },
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, selectedPurpose),
+              child: const Text("Continue"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<String> _showEventDetailDialog() async {
+    TextEditingController eventController = TextEditingController();
+
+    String? result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Enter Event Details"),
+          content: TextField(
+            controller: eventController,
+            decoration: const InputDecoration(hintText: "Event details"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null), // Return null
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, eventController.text),
+              child: const Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? ""; // Ensure a string is returned
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,7 +260,7 @@ class LecturerBookingPageState extends State<LecturerBookingPage> {
                         trailing: ElevatedButton(
                           onPressed: () async {
                             try {
-                              // Fetch the user's name from Firestore
+                              // Fetch lecturer details (including modules)
                               DocumentSnapshot userDoc = await FirebaseFirestore
                                   .instance
                                   .collection("users")
@@ -199,17 +275,32 @@ class LecturerBookingPageState extends State<LecturerBookingPage> {
                                 return;
                               }
 
-                              String lecturerName = userDoc["name"] ??
-                                  "Unknown Lecturer"; // Default if name is missing
+                              String lecturerName =
+                                  userDoc["name"] ?? "Unknown Lecturer";
+                              List<dynamic> modules = userDoc["modules"] ?? [];
+
+                              // Show purpose selection dialog
+                              String? selectedPurpose =
+                                  await _showPurposeDialog(modules);
+
+                              if (selectedPurpose == null)
+                                return; // User canceled
+
+                              String detail = selectedPurpose == "Event"
+                                  ? await _showEventDetailDialog()
+                                  : selectedPurpose;
+
+                              if (detail.isEmpty)
+                                return; // If event details are required but empty, cancel
 
                               String newStatus = "scheduled";
 
-                              // Add the booking to TPbooking collection with user's name
+                              // Store in Firestore
                               await FirebaseFirestore.instance
                                   .collection("TPbooking")
                                   .add({
                                 "userId": widget.tpNumber,
-                                "name": lecturerName, // Added name field
+                                "name": lecturerName,
                                 "venueName": slotData['venueName'],
                                 "venueType": slotData['venueType'],
                                 "date": slotData['date'],
@@ -217,6 +308,8 @@ class LecturerBookingPageState extends State<LecturerBookingPage> {
                                 "endTime": slotData['endTime'],
                                 "status": newStatus,
                                 "bookedtime": Timestamp.now(),
+                                "detail":
+                                    detail, // Store module or event detail
                               });
 
                               await FirebaseFirestore.instance
