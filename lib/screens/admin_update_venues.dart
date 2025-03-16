@@ -143,7 +143,7 @@ class EditVenuePageState extends State<EditVenuePage> {
         backgroundColor: AppColors.darkdarkgrey,
         foregroundColor: AppColors.white,
       ),
-      backgroundColor: AppColors.darkdarkgrey,
+      backgroundColor: AppColors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

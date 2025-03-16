@@ -103,7 +103,7 @@ class CreateVenuePageState extends State<CreateVenuePage> {
         backgroundColor: AppColors.darkdarkgrey,
         foregroundColor: AppColors.white,
       ),
-      backgroundColor: AppColors.darkdarkgrey,
+      backgroundColor: AppColors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -224,7 +224,7 @@ class CreateVenuePageState extends State<CreateVenuePage> {
               child: ElevatedButton(
                 onPressed: _saveVenue,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkdarkgrey,
+                  backgroundColor: AppColors.darkgrey,
                   foregroundColor: AppColors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
@@ -294,8 +294,7 @@ class CreateVenuePageState extends State<CreateVenuePage> {
   }) {
     return TextField(
       controller: controller,
-      style:
-          const TextStyle(color: AppColors.white), // White text for dark theme
+      style: const TextStyle(color: AppColors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: AppColors.lightgrey),
