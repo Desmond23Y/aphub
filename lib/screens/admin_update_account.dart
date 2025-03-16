@@ -6,7 +6,7 @@ class UpdateAccount extends StatefulWidget {
   final String name;
   final String role;
   final String password;
-  final String? modules;
+  final List<dynamic>? modules; // Change to List<dynamic>?
 
   const UpdateAccount({
     super.key,
@@ -33,7 +33,11 @@ class UpdateAccountState extends State<UpdateAccount> {
     super.initState();
     _nameController = TextEditingController(text: widget.name);
     _passwordController = TextEditingController(text: widget.password);
-    _modulesController = TextEditingController(text: widget.modules ?? '');
+
+    // Convert List<dynamic> to String for the controller
+    _modulesController = TextEditingController(
+      text: widget.modules?.join(', ') ?? '',
+    );
 
     // Auto-generate email based on user ID
     _email = "${widget.userId}@mail.apu.edu.my";
@@ -54,8 +58,7 @@ class UpdateAccountState extends State<UpdateAccount> {
             ? _modulesController.text.split(',').map((e) => e.trim()).toList()
             : [];
       } else {
-        updatedData['modules'] =
-            FieldValue.delete();
+        updatedData['modules'] = FieldValue.delete();
       }
 
       await FirebaseFirestore.instance
@@ -133,7 +136,7 @@ class UpdateAccountState extends State<UpdateAccount> {
               const SizedBox(height: 20),
 
               // Modules (Only for lecturers)
-              if (widget.role == 'lecturer') ...[
+              if (widget.role == 'Lecturer') ...[
                 TextFormField(
                   controller: _modulesController,
                   style: const TextStyle(color: Colors.white),

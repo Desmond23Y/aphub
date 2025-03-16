@@ -160,7 +160,7 @@ class ModuleManagementState extends State<ModuleManagement> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditModuleScreen(
+          builder: (context) => UpdateModuleScreen(
             moduleId: module.id,
             moduleName: data?["moduleName"] ?? "Unknown",
             duration: data?["duration"]?.toString() ?? "N/A",
