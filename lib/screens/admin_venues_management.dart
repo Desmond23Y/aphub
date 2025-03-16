@@ -2,7 +2,7 @@ import 'package:aphub/screens/admin_create_venues.dart';
 import 'package:aphub/screens/admin_update_venues.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/app_colors.dart';
+import 'package:aphub/utils/app_colors.dart';
 
 class VenuesManagement extends StatefulWidget {
   const VenuesManagement({super.key});
@@ -38,11 +38,11 @@ class VenuesManagementState extends State<VenuesManagement> {
             child: TextField(
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                prefixIcon: const Icon(Icons.search, color: AppColors.white),
                 hintText: "Search venues...",
-                hintStyle: const TextStyle(color: Colors.white60),
+                hintStyle: const TextStyle(color: AppColors.white),
                 filled: true,
-                fillColor: Colors.grey[800],
+                fillColor: AppColors.darkgrey,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -55,17 +55,17 @@ class VenuesManagementState extends State<VenuesManagement> {
               },
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 1),
           // Dropdown Filter
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: DropdownButtonFormField<String>(
-              dropdownColor: Colors.grey[800],
+              dropdownColor: AppColors.darkgrey,
               value: _selectedVenueType,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.grey[800],
+                fillColor: AppColors.darkgrey,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -86,7 +86,7 @@ class VenuesManagementState extends State<VenuesManagement> {
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 1),
 
           // Venue List
           Expanded(
@@ -127,7 +127,7 @@ class VenuesManagementState extends State<VenuesManagement> {
                         venue.data() as Map<String, dynamic>;
 
                     return Card(
-                      color: Colors.grey[850], // Dark card background
+                      color: AppColors.darkdarkgrey, // Dark card background
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -143,13 +143,16 @@ class VenuesManagementState extends State<VenuesManagement> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text("Capacity: ${venueData['capacity']}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(
+                                    color: AppColors.lightgrey)),
                             Text(
                                 "Equipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(
+                                    color: AppColors.lightgrey)),
                             Text(
                                 "Venue Type: ${venueData['venuetype'] ?? 'N/A'}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(
+                                    color: AppColors.lightgrey)),
                             Text(
                               "Status: ${venueData['status'] ?? 'N/A'}",
                               style: TextStyle(

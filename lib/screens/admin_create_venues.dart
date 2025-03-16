@@ -1,3 +1,4 @@
+import 'package:aphub/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -97,99 +98,222 @@ class CreateVenuePageState extends State<CreateVenuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Venue')),
-      body: Padding(
+      appBar: AppBar(
+        title: const Text('Create Venue'),
+        backgroundColor: AppColors.darkdarkgrey,
+        foregroundColor: AppColors.white,
+      ),
+      backgroundColor: AppColors.black,
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButtonFormField<String>(
+            // Venue Type Dropdown
+            _buildDropdown(
               value: _selectedVenueType,
-              decoration: const InputDecoration(labelText: "Venue Type"),
-              items: _venueTypes.map((type) {
-                return DropdownMenuItem(value: type, child: Text(type));
-              }).toList(),
+              label: "Venue Type",
+              items: _venueTypes,
               onChanged: (value) {
                 setState(() {
                   _selectedVenueType = value!;
                 });
               },
             ),
-            TextField(
+            const SizedBox(height: 20),
+
+            // Venue Location TextField
+            _buildTextField(
               controller: _locationController,
-              decoration: const InputDecoration(
-                  labelText: "Venue Location (e.g., A-07-01)"),
+              label: "Venue Location (e.g., A-07-01)",
             ),
-            DropdownButtonFormField<String>(
+            const SizedBox(height: 20),
+
+            // Block Dropdown
+            _buildDropdown(
               value: _selectedBlock,
-              decoration: const InputDecoration(labelText: "Block"),
-              items: _blocks.map((block) {
-                return DropdownMenuItem(value: block, child: Text(block));
-              }).toList(),
+              label: "Block",
+              items: _blocks,
               onChanged: (value) {
                 setState(() {
                   _selectedBlock = value!;
                 });
               },
             ),
-            DropdownButtonFormField<String>(
+            const SizedBox(height: 20),
+
+            // Level Dropdown
+            _buildDropdown(
               value: _selectedLevel,
-              decoration: const InputDecoration(labelText: "Level"),
-              items: _levels.map((level) {
-                return DropdownMenuItem(value: level, child: Text(level));
-              }).toList(),
+              label: "Level",
+              items: _levels,
               onChanged: (value) {
                 setState(() {
                   _selectedLevel = value!;
                 });
               },
             ),
-            TextField(
+            const SizedBox(height: 20),
+
+            // Capacity TextField
+            _buildTextField(
               controller: _capacityController,
-              decoration: const InputDecoration(labelText: "Capacity"),
+              label: "Capacity",
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 20),
-            const Text("Select Equipment:"),
-            Wrap(
-              spacing: 10,
-              children: _availableEquipment.map((equipment) {
-                return FilterChip(
-                  label: Text(equipment),
-                  selected: _selectedEquipment.contains(equipment),
-                  onSelected: (bool selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedEquipment.add(equipment);
-                      } else {
-                        _selectedEquipment.remove(equipment);
-                      }
-                    });
-                  },
-                );
-              }).toList(),
+
+            // Equipment Selection
+            Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    "Select Equipment:",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    children: _availableEquipment.map((equipment) {
+                      return FilterChip(
+                        label: Text(equipment),
+                        selected: _selectedEquipment.contains(equipment),
+                        selectedColor: Colors.green,
+                        labelStyle: TextStyle(
+                          color: _selectedEquipment.contains(equipment)
+                              ? AppColors.darkdarkgrey
+                              : AppColors.darkgrey,
+                        ),
+                        onSelected: (bool selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedEquipment.add(equipment);
+                            } else {
+                              _selectedEquipment.remove(equipment);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
+
+            // Status Dropdown
+            _buildDropdown(
               value: _selectedStatus,
-              decoration: const InputDecoration(labelText: "Status"),
-              items: _statusOptions.map((status) {
-                return DropdownMenuItem(value: status, child: Text(status));
-              }).toList(),
+              label: "Status",
+              items: _statusOptions,
               onChanged: (value) {
                 setState(() {
                   _selectedStatus = value!;
                 });
               },
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveVenue,
-              child: const Text("Save Venue"),
+            const SizedBox(height: 30),
+
+            // Save Venue Button
+            Center(
+              child: ElevatedButton(
+                onPressed: _saveVenue,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.darkgrey,
+                  foregroundColor: AppColors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  "Save Venue",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // Helper method to build a dropdown
+  Widget _buildDropdown({
+    required String value,
+    required String label,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.lightgrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        filled: true,
+        fillColor: AppColors.darkdarkgrey,
+      ),
+      dropdownColor: AppColors.darkdarkgrey,
+      style: const TextStyle(color: AppColors.white),
+      items: items.map((item) {
+        return DropdownMenuItem(
+          value: item,
+          child: Text(
+            item,
+            style: const TextStyle(color: AppColors.white),
+          ),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  // Helper method to build a text field
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      style: const TextStyle(color: AppColors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.lightgrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        filled: true,
+        fillColor: AppColors.darkdarkgrey,
+      ),
+      keyboardType: keyboardType,
     );
   }
 }

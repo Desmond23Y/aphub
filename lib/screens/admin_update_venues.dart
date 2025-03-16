@@ -1,3 +1,4 @@
+import 'package:aphub/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -23,8 +24,8 @@ class EditVenuePageState extends State<EditVenuePage> {
     'Auditorium',
     'Lab'
   ];
-  final List<String> _blocks = ['A', 'B', 'C', 'D'];
-  final List<String> _levels = ['1', '2', '3', '4', '5'];
+  final List<String> _blocks = ['A', 'B', 'D', 'E', 'S', 'Library', 'Tech Lab'];
+  final List<String> _levels = ['3', '4', '5', '6', '7', '8', '9'];
   final List<String> _equipmentOptions = ['Mic', 'Speaker', 'Projector'];
   final List<String> _statusOptions = ['available', 'unavailable'];
 
@@ -34,20 +35,37 @@ class EditVenuePageState extends State<EditVenuePage> {
   late String _selectedStatus;
   Set<String> _selectedEquipment = {};
 
-  bool _isLoading = false;
-
   @override
   void initState() {
     super.initState();
     _locationController =
-        TextEditingController(text: widget.venueData['location'] ?? '');
+        TextEditingController(text: widget.venueData['name'] ?? '');
     _capacityController = TextEditingController(
         text: widget.venueData['capacity']?.toString() ?? '');
 
+    // Ensure _selectedVenueType is in the _venueTypes list
     _selectedVenueType = widget.venueData['venuetype'] ?? 'Classroom';
+    if (!_venueTypes.contains(_selectedVenueType)) {
+      _selectedVenueType = 'Classroom'; // Reset to default if not found
+    }
+
+    // Ensure _selectedBlock is in the _blocks list
     _selectedBlock = widget.venueData['block'] ?? 'A';
+    if (!_blocks.contains(_selectedBlock)) {
+      _selectedBlock = 'A'; // Reset to default if not found
+    }
+
+    // Ensure _selectedLevel is in the _levels list
     _selectedLevel = widget.venueData['level']?.toString() ?? '1';
+    if (!_levels.contains(_selectedLevel)) {
+      _selectedLevel = '1'; // Reset to default if not found
+    }
+
+    // Ensure _selectedStatus is in the _statusOptions list
     _selectedStatus = widget.venueData['status'] ?? 'available';
+    if (!_statusOptions.contains(_selectedStatus)) {
+      _selectedStatus = 'available'; // Reset to default if not found
+    }
 
     _selectedEquipment = Set<String>.from(widget.venueData['equipment'] ?? []);
   }
@@ -61,8 +79,6 @@ class EditVenuePageState extends State<EditVenuePage> {
 
   Future<void> _updateVenue() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
 
     try {
       await FirebaseFirestore.instance
@@ -91,8 +107,6 @@ class EditVenuePageState extends State<EditVenuePage> {
         );
       }
     }
-
-    setState(() => _isLoading = false);
   }
 
   Widget _buildEquipmentChips() {
@@ -103,6 +117,10 @@ class EditVenuePageState extends State<EditVenuePage> {
         return ChoiceChip(
           label: Text(equipment),
           selected: isSelected,
+          selectedColor: Colors.green,
+          labelStyle: TextStyle(
+            color: isSelected ? AppColors.white : AppColors.lightgrey,
+          ),
           onSelected: (selected) {
             setState(() {
               if (selected) {
@@ -120,101 +138,205 @@ class EditVenuePageState extends State<EditVenuePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Venue")),
+      appBar: AppBar(
+        title: const Text("Edit Venue"),
+        backgroundColor: AppColors.darkdarkgrey,
+        foregroundColor: AppColors.white,
+      ),
+      backgroundColor: AppColors.black,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.center, // Center children horizontally
             children: [
-              DropdownButtonFormField(
+              // Venue Type Dropdown
+              _buildDropdown(
                 value: _selectedVenueType,
-                decoration: const InputDecoration(labelText: "Venue Type"),
-                items: _venueTypes
-                    .map((type) =>
-                        DropdownMenuItem(value: type, child: Text(type)))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedVenueType = value!),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                    labelText: "Venue Location (e.g., A-07-01)"),
-                validator: (value) =>
-                    value!.trim().isEmpty ? "Enter venue location" : null,
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField(
-                value: _selectedBlock,
-                decoration: const InputDecoration(labelText: "Block"),
-                items: _blocks
-                    .map((block) =>
-                        DropdownMenuItem(value: block, child: Text(block)))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedBlock = value!),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField(
-                value: _selectedLevel,
-                decoration: const InputDecoration(labelText: "Level"),
-                items: _levels
-                    .map((level) =>
-                        DropdownMenuItem(value: level, child: Text(level)))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedLevel = value!),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _capacityController,
-                decoration: const InputDecoration(labelText: "Capacity"),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return "Enter capacity";
-                  }
-                  if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                    return "Enter a valid number > 0";
-                  }
-                  return null;
+                label: "Venue Type",
+                items: _venueTypes,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedVenueType = value!;
+                  });
                 },
               ),
-              const SizedBox(height: 10),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text("Select Equipment:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 5),
-              _buildEquipmentChips(),
-              const SizedBox(height: 10),
-              DropdownButtonFormField(
-                value: _selectedStatus,
-                decoration: const InputDecoration(labelText: "Status"),
-                items: _statusOptions
-                    .map((status) =>
-                        DropdownMenuItem(value: status, child: Text(status)))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedStatus = value!),
+              const SizedBox(height: 20),
+
+              // Venue Location TextField
+              _buildTextField(
+                controller: _locationController,
+                label: "Venue Location (e.g., A-07-01)",
               ),
               const SizedBox(height: 20),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _updateVenue,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade100,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
+
+              // Block Dropdown
+              _buildDropdown(
+                value: _selectedBlock,
+                label: "Block",
+                items: _blocks,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedBlock = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Level Dropdown
+              _buildDropdown(
+                value: _selectedLevel,
+                label: "Level",
+                items: _levels,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedLevel = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Capacity TextField
+              _buildTextField(
+                controller: _capacityController,
+                label: "Capacity",
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 20),
+
+              // Equipment Selection (Centered)
+              Center(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // Center children horizontally
+                  children: [
+                    const Text(
+                      "Select Equipment:",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.white, // White text for dark theme
                       ),
-                      child: const Text("Save Venue"),
                     ),
+                    const SizedBox(height: 10),
+                    _buildEquipmentChips(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Status Dropdown
+              _buildDropdown(
+                value: _selectedStatus,
+                label: "Status",
+                items: _statusOptions,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value!;
+                  });
+                },
+              ),
+              const SizedBox(height: 30),
+
+              // Save Venue Button (Centered)
+              Center(
+                child: ElevatedButton(
+                  onPressed: _updateVenue,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.darkgrey,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    "Save Venue",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  // Helper method to build a dropdown
+  Widget _buildDropdown({
+    required String value,
+    required String label,
+    required List<String> items,
+    required Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.lightgrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        filled: true,
+        fillColor: AppColors.darkdarkgrey,
+      ),
+      dropdownColor: AppColors.darkdarkgrey,
+      style: const TextStyle(color: AppColors.white),
+      items: items.map((item) {
+        return DropdownMenuItem(
+          value: item,
+          child: Text(
+            item,
+            style: const TextStyle(color: AppColors.white),
+          ),
+        );
+      }).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  // Helper method to build a text field
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      style:
+          const TextStyle(color: AppColors.white), // White text for dark theme
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.lightgrey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.lightgrey),
+        ),
+        filled: true,
+        fillColor: AppColors.darkdarkgrey,
+      ),
+      keyboardType: keyboardType,
     );
   }
 }
