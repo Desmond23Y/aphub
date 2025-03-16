@@ -61,7 +61,7 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
   // Tab 1: All Bookings
   Widget _buildAllBookingsTab() {
     return StreamBuilder<QuerySnapshot>(
-      stream: tpBookingsRef.snapshots(),
+      stream: tpBookingsRef.orderBy("date", descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -86,15 +86,12 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
               child: ListTile(
                 title: Text(
                   booking["venueName"] ?? "Unknown Venue",
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Event: ${booking["eventname"]}",
-                      style: const TextStyle(color: Colors.white),
-                    ),
                     Text(
                       "Date: ${booking["date"]}",
                       style: const TextStyle(color: Colors.white),
@@ -104,8 +101,13 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
                       style: const TextStyle(color: Colors.white),
                     ),
                     Text(
+                      "Booked By : ${booking["name"]} | ${booking["userId"]}",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    Text(
                       "Status: $status",
-                      style: TextStyle(color: statusColor),
+                      style: TextStyle(
+                          color: statusColor, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -145,7 +147,8 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
               child: ListTile(
                 title: Text(
                   request["venueName"] ?? "Unknown Venue",
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,8 +170,13 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
                       style: const TextStyle(color: Colors.white),
                     ),
                     Text(
+                      "Booked By : ${request["name"]} | ${request["userId"]}",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    Text(
                       "Status: $status",
-                      style: TextStyle(color: statusColor),
+                      style: TextStyle(
+                          color: statusColor, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -198,6 +206,8 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
   // Approve a request
   Future<void> _approveRequest(String docId) async {
     await tpFormRef.doc(docId).update({"status": "scheduled"});
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Request approved!"),
@@ -208,8 +218,11 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
 
   // Reject a request with a reason
   Future<void> _rejectRequest(String docId) async {
+    if (!mounted) return;
+
     final reasonController = TextEditingController();
-    showDialog(
+
+    await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -227,7 +240,7 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(context, rootNavigator: true).pop();
               },
               child:
                   const Text("Cancel", style: TextStyle(color: Colors.white)),
@@ -239,13 +252,17 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
                     "status": "cancelled",
                     "rejectionReason": reasonController.text,
                   });
+
+                  if (!mounted) return;
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("Request rejected!"),
                       duration: Duration(seconds: 2),
                     ),
                   );
-                  Navigator.pop(context);
+
+                  Navigator.of(context, rootNavigator: true).pop();
                 }
               },
               child: const Text("Reject", style: TextStyle(color: Colors.red)),
@@ -265,6 +282,10 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
         return Colors.yellow;
       case "cancelled":
         return Colors.red;
+      case "history":
+        return Colors.orange;
+      case "completed":
+        return Colors.orange;
       default:
         return Colors.white;
     }
