@@ -4,6 +4,9 @@ import 'package:aphub/screens/student_booking_page.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
 import 'package:aphub/screens/student_history_page.dart';
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:aphub/login_page.dart'; 
+
 
 class StudentNotificationPage extends StatefulWidget {
   final String tpNumber;
@@ -15,8 +18,27 @@ class StudentNotificationPage extends StatefulWidget {
 }
 
 class StudentNotificationPageState extends State<StudentNotificationPage> {
-  String selectedFacility = 'All';
-  String selectedStatus = 'All';
+  String selectedBookingStatus = 'All'; // Filter by booking status (bstatus)
+  String selectedNotificationStatus = 'All'; // Filter by notification status (nstatus)
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Sign out the user
+
+      // Navigate to the login page and remove all previous routes
+      Navigator.pushReplacement(
+        // ignore: use_build_context_synchronously
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    } catch (e) {
+      debugPrint("Error during logout: $e");
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to log out. Please try again.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +64,7 @@ class StudentNotificationPageState extends State<StudentNotificationPage> {
       body: Column(
         children: [
           const SizedBox(height: 20),
-          _buildFilters(),
+          _buildFilters(), // Add filter dropdowns and "Read All" button
           Expanded(child: _buildNotificationList()),
         ],
       ),
@@ -50,194 +72,50 @@ class StudentNotificationPageState extends State<StudentNotificationPage> {
     );
   }
 
-void _markNotificationAsRead(DocumentReference docRef) async {
-  try {
-    await docRef.update({'nstatus': 'read'});
-    debugPrint("Notification marked as read");
-  } catch (e) {
-    debugPrint("Error updating notification: $e");
-  }
-}
+  /// 🔹 Mark All Notifications as Read
+  Future<void> _markAllNotificationsAsRead() async {
+    try {
+      // Fetch all notifications for the current user
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: widget.tpNumber)
+          .get();
 
-Widget _buildNotificationList() {
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('notifications')
-        .where('users', isEqualTo: widget.tpNumber) // Use 'isEqualTo' for single string
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
+      // Update each notification's status to "read"
+      for (var doc in snapshot.docs) {
+        await doc.reference.update({'nstatus': 'read'});
       }
 
-      if (snapshot.hasError) {
-        debugPrint("Error fetching notifications: ${snapshot.error}");
-        return Center(
-          child: Text(
-            'Error: ${snapshot.error}',
-            style: const TextStyle(color: AppColors.white),
-          ),
-        );
-      }
-
-      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-        debugPrint("No notifications found for TP: ${widget.tpNumber}");
-        return const Center(
-          child: Text(
-            'No notifications available',
-            style: TextStyle(color: AppColors.white),
-          ),
-        );
-      }
-
-      // Convert Firestore documents to a list of maps
-      var notifications = snapshot.data!.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
-      debugPrint("Fetched ${notifications.length} notifications for TP: ${widget.tpNumber}");
-
-      // Sort notifications: "new" notifications first, then "read" notifications
-      notifications.sort((a, b) {
-        String statusA = a['nstatus'] ?? 'read'; // Default to "read" if null
-        String statusB = b['nstatus'] ?? 'read'; // Default to "read" if null
-
-        if (statusA == 'new' && statusB != 'new') {
-          return -1; // "new" comes before "read"
-        } else if (statusA != 'new' && statusB == 'new') {
-          return 1; // "read" comes after "new"
-        } else {
-          return 0; // No change in order
-        }
-      });
-
-      return ListView.builder(
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          var doc = snapshot.data!.docs[index]; // Get the document reference
-          var data = notifications[index];
-          String bookingId = data['bookingid'] ?? 'N/A';
-          String bstatus = data['bstatus'] ?? 'Unknown';
-          String nstatus = data['nstatus'] ?? 'Unknown';
-
-          debugPrint("Notification: $bookingId | Status: $bstatus | Notification Status: $nstatus");
-
-          // Apply Filters
-          if ((selectedFacility != 'All' && selectedFacility != bstatus) ||
-              (selectedStatus != 'All' && selectedStatus != nstatus)) {
-            return const SizedBox.shrink(); // Hide if it doesn't match filters
-          }
-
-          // Set opacity based on notification status
-          double opacity = nstatus == 'new' ? 0.8 : 0.4;
-
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8), // Move margin to Container
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4), // Match the Card's border radius
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.darkgrey.withOpacity(opacity), // Dynamic opacity
-                  blurRadius: 6,
-                  spreadRadius: 0.5,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Card(
-              color: AppColors.black,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4), // Match the Container's border radius
-              ),
-              child: ListTile(
-                title: Text(
-                  'Booking ID: $bookingId',
-                  style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  'Status: $bstatus | Notification: $nstatus',
-                  style: const TextStyle(color: AppColors.white),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.white, size: 18),
-                onTap: () {
-                  // Mark notification as "read" when tapped
-                  _markNotificationAsRead(doc.reference);
-                  _showNotificationDetails(data);
-                },
-              ),
-            ),
-          );
-        },
+      // Show a success message
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All notifications marked as read')),
       );
-    },
-  );
-}
 
-  /// 🔹 Show Notification Details in Dialog
-  void _showNotificationDetails(Map<String, dynamic> data) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.darkgrey,
-          title: const Text('Notification Details', style: TextStyle(color: AppColors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _detailRow('Booking ID:', data['bookingid']),
-              _detailRow('Status:', data['bstatus']),
-              _detailRow('Message:', data['message']),
-              _detailRow('Notification:', data['nstatus']),
-              _detailRow('Venue:', data['venue']),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close', style: TextStyle(color: AppColors.white)),
-            ),
-          ],
-        );
-      },
-    );
+      // Refresh the UI
+      setState(() {});
+    } catch (e) {
+      debugPrint("Error marking all notifications as read: $e");
+      // Show an error message
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to mark notifications as read')),
+      );
+    }
   }
 
-  /// 🔹 Helper to Build a Row for Dialog Details
-  Widget _detailRow(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text('$label ', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value ?? 'N/A', style: const TextStyle(color: AppColors.white))),
-        ],
-      ),
-    );
-  }
-
-  /// 🔹 Filters for Notification List
+  /// 🔹 Filters for Notification List with "Read All" Button
   Widget _buildFilters() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Dropdown for Booking Status
           DropdownButton<String>(
             dropdownColor: AppColors.darkgrey,
-            value: selectedFacility,
-            items: ['All', 'Completed', 'Pending', 'Cancelled', 'Scheduled']
-                .map((facility) => DropdownMenuItem(
-                      value: facility,
-                      child: Text(facility, style: const TextStyle(color: AppColors.white)),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedFacility = value!;
-              });
-            },
-          ),
-          DropdownButton<String>(
-            dropdownColor: AppColors.darkgrey,
-            value: selectedStatus,
-            items: ['All', 'read', 'new']
+            value: selectedBookingStatus,
+            items: ['All', 'Scheduled', 'Completed', 'Pending', 'Cancelled']
                 .map((status) => DropdownMenuItem(
                       value: status,
                       child: Text(status, style: const TextStyle(color: AppColors.white)),
@@ -245,9 +123,379 @@ Widget _buildNotificationList() {
                 .toList(),
             onChanged: (value) {
               setState(() {
-                selectedStatus = value!;
+                selectedBookingStatus = value!;
               });
             },
+          ),
+
+          // Dropdown for Notification Status
+          DropdownButton<String>(
+            dropdownColor: AppColors.darkgrey,
+            value: selectedNotificationStatus,
+            items: ['All', 'New', 'Read']
+                .map((status) => DropdownMenuItem(
+                      value: status,
+                      child: Text(status, style: const TextStyle(color: AppColors.white)),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedNotificationStatus = value!;
+              });
+            },
+          ),
+
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10), // Match the button's border radius
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.lightgrey.withOpacity(0.3), // Glow color with opacity
+                  blurRadius: 3, // Increase blur for a softer glow
+                  spreadRadius: -0.1, // Increase spread for a wider glow
+                  offset: const Offset(0, 0), // No offset for a centered glow
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _markAllNotificationsAsRead,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.darkdarkgrey, // Button color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                elevation: 0, // Remove default elevation to avoid double shadow
+              ),
+              child: const Text(
+                'Read All',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _markNotificationAsRead(DocumentReference docRef) async {
+    try {
+      debugPrint("Updating notification with ID: ${docRef.id}");
+      await docRef.update({'nstatus': 'read'});
+      debugPrint("Notification marked as read");
+    } catch (e) {
+      debugPrint("Error updating notification: $e");
+    }
+  }
+
+  String _formatTimestamp(Timestamp timestamp) {
+    try {
+      DateTime dateTime = timestamp.toDate();
+      String year = dateTime.year.toString();
+      String month = dateTime.month.toString().padLeft(2, '0');
+      String day = dateTime.day.toString().padLeft(2, '0');
+      String hour = dateTime.hour.toString().padLeft(2, '0');
+      String minute = dateTime.minute.toString().padLeft(2, '0');
+      return '$year-$month-$day $hour:$minute'; // Return the formatted timestamp
+    } catch (e) {
+      debugPrint("Error formatting timestamp: $e");
+    }
+    return 'Unknown Time'; // Default value if formatting fails
+  }
+
+  String _formatDate(String date) {
+    try {
+      // Split the date string into parts (assuming the format is "yyyy-MM-dd")
+      List<String> parts = date.split('-');
+      if (parts.length == 3) {
+        String year = parts[0];
+        String month = parts[1];
+        String day = parts[2];
+        return '$year-$month-$day'; // Return the formatted date
+      }
+    } catch (e) {
+      debugPrint("Error formatting date: $e");
+    }
+    return 'Unknown Date'; // Default value if formatting fails
+  }
+
+  Widget _buildNotificationList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: widget.tpNumber)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          debugPrint("Error fetching notifications: ${snapshot.error}");
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: const TextStyle(color: AppColors.white),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          debugPrint("No notifications found for TP: ${widget.tpNumber}");
+          return const Center(
+            child: Text(
+              'No notifications available',
+              style: TextStyle(color: AppColors.white),
+            ),
+          );
+        }
+
+        // Convert documents to a list of maps with document IDs
+        var notifications = snapshot.data!.docs.map((doc) {
+          return {
+            'id': doc.id, // Include the document ID
+            'data': doc.data() as Map<String, dynamic>, // Cast to Map<String, dynamic>
+          };
+        }).toList();
+
+        // Apply filters
+        var filteredNotifications = notifications.where((notification) {
+          var data = notification['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
+          bool matchesBookingStatus = selectedBookingStatus == 'All' ||
+              (data['bstatus']?.toString().toLowerCase() ?? '') == selectedBookingStatus.toLowerCase();
+          bool matchesNotificationStatus = selectedNotificationStatus == 'All' ||
+              (data['nstatus']?.toString().toLowerCase() ?? '') == selectedNotificationStatus.toLowerCase();
+          return matchesBookingStatus && matchesNotificationStatus;
+        }).toList();
+
+        // Sort notifications: "new" notifications first, then "read" notifications
+        filteredNotifications.sort((a, b) {
+          var dataA = a['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
+          var dataB = b['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
+          String statusA = dataA['nstatus'] ?? 'read';
+          String statusB = dataB['nstatus'] ?? 'read';
+
+          if (statusA == 'new' && statusB != 'new') {
+            return -1;
+          } else if (statusA != 'new' && statusB == 'new') {
+            return 1;
+          } else {
+            return 0;
+          }
+        });
+
+        return ListView.builder(
+          itemCount: filteredNotifications.length,
+          itemBuilder: (context, index) {
+            var notification = filteredNotifications[index];
+            var docId = notification['id'] as String; // Cast to String
+            var data = notification['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
+            String venueName = data['venueName'] as String? ?? 'Unknown Venue'; // Cast to String?
+            String date = data['date'] as String? ?? 'Unknown Date'; // Cast to String?
+            String startTime = data['startTime'] as String? ?? 'N/A'; // Cast to String?
+            String endTime = data['endTime'] as String? ?? 'N/A'; // Cast to String?
+            String bookedTime = data['bookedtime'] != null
+                ? _formatTimestamp(data['bookedtime'] as Timestamp) // Cast to Timestamp
+                : 'Unknown Time';
+            String nstatus = data['nstatus'] as String? ?? 'Unknown'; // Cast to String?
+            String bstatus = data['bstatus'] as String? ?? 'Unknown'; // Cast to String?
+
+            // Format the date manually
+            String formattedDate = _formatDate(date);
+
+            debugPrint("Notification ID: $docId | Venue: $venueName | Date: $formattedDate | Status: $nstatus | Booking Status: $bstatus");
+
+            // Set opacity based on notification status
+            double opacity = nstatus == 'new' ? 0.8 : 0.4;
+
+            // Determine color for booking status
+            Color bookingStatusColor;
+            switch (bstatus.toLowerCase()) {
+              case 'completed':
+                bookingStatusColor = Colors.green;
+                break;
+              case 'scheduled':
+                bookingStatusColor = Colors.orange;
+                break;
+              case 'pending':
+                bookingStatusColor = Colors.yellow;
+                break;
+              case 'cancelled':
+                bookingStatusColor = Colors.red;
+                break;
+              case 'ongoing':
+                bookingStatusColor = Colors.green;
+                break;
+              default:
+                bookingStatusColor = AppColors.white; // Default color
+            }
+
+            // Determine color for notification status
+            Color notificationStatusColor = nstatus == 'new' ? Colors.blue : AppColors.white;
+
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.darkgrey.withOpacity(opacity),
+                    blurRadius: 6,
+                    spreadRadius: 0.5,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Card(
+                color: AppColors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: ListTile(
+                  title: Text(
+                    venueName,
+                    style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$formattedDate | $startTime - $endTime',
+                        style: const TextStyle(color: AppColors.white),
+                      ),
+                      Text(
+                        'Booked Time: $bookedTime',
+                        style: const TextStyle(color: AppColors.white),
+                      ),
+                      Text(
+                        'Booking Status: $bstatus',
+                        style: TextStyle(
+                          color: bookingStatusColor, // Dynamic color for booking status
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Notification Status: $nstatus',
+                        style: TextStyle(
+                          color: notificationStatusColor, // Dynamic color for notification status
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.white, size: 18),
+                  onTap: () {
+                    // Get the document reference using the document ID
+                    DocumentReference docRef = FirebaseFirestore.instance
+                        .collection('notifications')
+                        .doc(docId);
+
+                    // Mark the notification as read
+                    _markNotificationAsRead(docRef);
+
+                    // Show the notification details
+                    _showNotificationDetails(data);
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showNotificationDetails(Map<String, dynamic> data) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.darkdarkgrey,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // Rounded corners
+          ),
+          title: const Text(
+            'Notification Details',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDetailCard('Venue', data['venueName'] ?? 'Unknown Venue'),
+                const SizedBox(height: 10),
+                _buildDetailCard('Date', data['date'] ?? 'Unknown Date'),
+                const SizedBox(height: 10),
+                _buildDetailCard('Time', '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}'),
+                const SizedBox(height: 10),
+                _buildDetailCard(
+                  'Booked Time',
+                  data['bookedtime'] != null
+                      ? _formatTimestamp(data['bookedtime'])
+                      : 'Unknown Time',
+                ),
+                const SizedBox(height: 10),
+                _buildDetailCard('Message', data['message'] ?? 'No message'),
+                const SizedBox(height: 10),
+                _buildDetailCard('Notification Status', data['nstatus'] ?? 'Unknown'),
+                const SizedBox(height: 10),
+                _buildDetailCard('Booking Status', data['bstatus'] ?? 'Unknown'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Helper to build a detail card
+  Widget _buildDetailCard(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -281,7 +529,7 @@ Widget _buildNotificationList() {
                 MaterialPageRoute(builder: (context) => StudentPage(tpNumber: widget.tpNumber)),
               );
             }),
-            _buildNavItem('assets/icons/MAE_logout_icon.png', 'Logout', () {}),
+            _buildNavItem('assets/icons/MAE_logout_icon.png', 'Logout', () {_logout();}),
           ],
         ),
       ),
