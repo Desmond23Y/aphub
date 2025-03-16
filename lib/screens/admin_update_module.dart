@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:aphub/utils/app_colors.dart';
 
 class UpdateModuleScreen extends StatefulWidget {
-  final String moduleId; // Document ID of the module to update
-  final String moduleName; // Existing module name
-  final String duration; // Existing duration
-  final String? lecturerId; // Existing lecturer ID
-  final String? lecturerName; // Existing lecturer name
+  final String moduleId;
+  final String moduleName;
+  final String duration;
+  final String? lecturerId;
+  final String? lecturerName;
 
   const UpdateModuleScreen({
     super.key,
@@ -27,7 +28,7 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
   String? _selectedLecturerId;
   String? _selectedLecturerName;
 
-  bool _isSaving = false; // To prevent duplicate requests
+  bool _isSaving = false;
 
   final CollectionReference _modulesRef =
       FirebaseFirestore.instance.collection("modules");
@@ -44,23 +45,23 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Pre-fill the form fields with the existing module data
     _moduleNameController.text = widget.moduleName;
     _selectedDuration = widget.duration;
     _selectedLecturerId = widget.lecturerId;
     _selectedLecturerName = widget.lecturerName;
 
-    // Ensure _selectedDuration is in the _durations list
     if (!_durations.contains(_selectedDuration)) {
-      _selectedDuration = null; // Reset to null if not found
+      _selectedDuration = null;
     }
   }
 
   Future<void> _updateModule() async {
     if (_moduleNameController.text.isEmpty || _selectedDuration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Module name and duration are required")),
+        const SnackBar(
+          content: Text("Module name and duration are required"),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -79,14 +80,20 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Module updated successfully")),
+          const SnackBar(
+            content: Text("Module updated successfully"),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -101,7 +108,15 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Update Module")),
+      backgroundColor: AppColors.black,
+      appBar: AppBar(
+        title: const Text(
+          "Update Module",
+          style: TextStyle(color: AppColors.white),
+        ),
+        backgroundColor: AppColors.darkdarkgrey,
+        iconTheme: const IconThemeData(color: AppColors.white),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -109,18 +124,37 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
           children: [
             TextField(
               controller: _moduleNameController,
-              decoration: const InputDecoration(labelText: "Module Name"),
+              style: const TextStyle(color: AppColors.white),
+              decoration: InputDecoration(
+                labelText: "Module Name",
+                labelStyle: const TextStyle(color: AppColors.white),
+                filled: true,
+                fillColor: AppColors.darkgrey,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
-
-            // Duration Dropdown
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: "Duration"),
+              decoration: InputDecoration(
+                labelText: "Duration",
+                labelStyle: const TextStyle(color: AppColors.white),
+                filled: true,
+                fillColor: AppColors.darkgrey,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              dropdownColor: AppColors.darkgrey,
               value: _selectedDuration,
               items: _durations
                   .map((duration) => DropdownMenuItem(
                         value: duration,
-                        child: Text(duration),
+                        child: Text(duration,
+                            style: const TextStyle(color: AppColors.white)),
                       ))
                   .toList(),
               onChanged: (value) {
@@ -130,49 +164,47 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
               },
             ),
             const SizedBox(height: 16),
-
-            // Lecturer Dropdown
             StreamBuilder<QuerySnapshot>(
               stream:
                   _usersRef.where("role", isEqualTo: "Lecturer").snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                      child: CircularProgressIndicator(color: AppColors.white));
                 }
 
                 List<QueryDocumentSnapshot> lecturers = snapshot.data!.docs;
-
                 if (lecturers.isEmpty) {
-                  return const Text("No lecturers available");
-                }
-
-                // Ensure _selectedLecturerId is in the lecturers list
-                final lecturerIds =
-                    lecturers.map((lecturer) => lecturer.id).toList();
-                if (!lecturerIds.contains(_selectedLecturerId)) {
-                  _selectedLecturerId = null; // Reset to null if not found
+                  return const Text("No lecturers available",
+                      style: TextStyle(color: AppColors.white));
                 }
 
                 return DropdownButtonFormField<String>(
-                  decoration:
-                      const InputDecoration(labelText: "Select Lecturer"),
+                  decoration: InputDecoration(
+                    labelText: "Select Lecturer",
+                    labelStyle: const TextStyle(color: AppColors.white),
+                    filled: true,
+                    fillColor: AppColors.darkgrey,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  dropdownColor: AppColors.darkgrey,
                   value: _selectedLecturerId,
                   items: lecturers.map((lecturer) {
                     final data = lecturer.data() as Map<String, dynamic>;
-
                     return DropdownMenuItem<String>(
                       value: lecturer.id,
-                      child: Text(data["name"] ?? "Unknown"),
+                      child: Text(data["name"] ?? "Unknown",
+                          style: const TextStyle(color: AppColors.white)),
                     );
                   }).toList(),
                   onChanged: (value) {
-                    final selectedLecturer = lecturers.firstWhere(
-                      (lecturer) => lecturer.id == value,
-                    );
-
+                    final selectedLecturer = lecturers
+                        .firstWhere((lecturer) => lecturer.id == value);
                     final lecturerData =
                         selectedLecturer.data() as Map<String, dynamic>;
-
                     setState(() {
                       _selectedLecturerId = value;
                       _selectedLecturerName = lecturerData["name"];
@@ -181,15 +213,23 @@ class UpdateModuleScreenState extends State<UpdateModuleScreen> {
                 );
               },
             ),
-
             const SizedBox(height: 20),
-
-            // Update Button
-            ElevatedButton(
-              onPressed: _isSaving ? null : _updateModule,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : const Text("Update Module"),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _updateModule,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: _isSaving
+                    ? const CircularProgressIndicator(
+                        color: AppColors.white, strokeWidth: 2)
+                    : const Text("Update Module",
+                        style: TextStyle(color: AppColors.white, fontSize: 16)),
+              ),
             ),
           ],
         ),

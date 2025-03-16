@@ -1,5 +1,6 @@
 import 'package:aphub/screens/admin_create_account.dart';
 import 'package:aphub/screens/admin_update_account.dart';
+import 'package:aphub/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -20,14 +21,14 @@ class AccountManagementState extends State<AccountManagement> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         title: const Text(
           'Account Management',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.white),
         ),
-        backgroundColor: Colors.grey[900],
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: AppColors.darkdarkgrey,
+        iconTheme: const IconThemeData(color: AppColors.white),
       ),
       body: Column(
         children: [
@@ -35,13 +36,13 @@ class AccountManagementState extends State<AccountManagement> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.white),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, color: Colors.white),
+                prefixIcon: const Icon(Icons.search, color: AppColors.white),
                 hintText: "Search accounts...",
-                hintStyle: const TextStyle(color: Colors.white60),
+                hintStyle: const TextStyle(color: AppColors.white),
                 filled: true,
-                fillColor: Colors.grey[800],
+                fillColor: AppColors.darkgrey,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
@@ -54,27 +55,27 @@ class AccountManagementState extends State<AccountManagement> {
               },
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 1),
           // Role Filter Dropdown
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: DropdownButtonFormField<String>(
               value: _selectedRole,
-              dropdownColor: Colors.grey[800],
+              dropdownColor: AppColors.darkgrey,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.grey[800],
+                fillColor: AppColors.darkgrey,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
               ),
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.white),
               items: ["All", "Student", "Lecturer", "Admin"]
                   .map((role) => DropdownMenuItem(
                         value: role,
                         child: Text(role,
-                            style: const TextStyle(color: Colors.white)),
+                            style: const TextStyle(color: AppColors.white)),
                       ))
                   .toList(),
               onChanged: (value) {
@@ -99,7 +100,7 @@ class AccountManagementState extends State<AccountManagement> {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(
                       child: Text("No Accounts Available",
-                          style: TextStyle(color: Colors.white)));
+                          style: TextStyle(color: AppColors.white)));
                 }
 
                 List<QueryDocumentSnapshot> users = snapshot.data!.docs;
@@ -136,7 +137,7 @@ class AccountManagementState extends State<AccountManagement> {
                         user.data() as Map<String, dynamic>;
 
                     return Card(
-                      color: Colors.grey[850],
+                      color: AppColors.darkdarkgrey,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -146,26 +147,27 @@ class AccountManagementState extends State<AccountManagement> {
                         title: Text(
                           userData['name'] ?? 'Unknown User',
                           style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
+                              color: AppColors.white,
+                              fontWeight: FontWeight.bold),
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text("TP Number: $userId",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: AppColors.white)),
                             Text(
                                 "Role: ${userData['role'] ?? userData['modules']?['role'] ?? 'No role'}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: AppColors.white)),
                             Text("Email: ${userData['email'] ?? 'No email'}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: AppColors.white)),
                             if (userData['role'] == 'Lecturer')
                               Text(
                                   "Modules: ${userData['modules'] ?? 'Not assigned'}",
                                   style:
-                                      const TextStyle(color: Colors.white70)),
+                                      const TextStyle(color: AppColors.white)),
                             Text(
                                 "Password: ${userData['password'] ?? 'Not available'}",
-                                style: const TextStyle(color: Colors.white70)),
+                                style: const TextStyle(color: AppColors.white)),
                           ],
                         ),
                         trailing: Row(
@@ -199,7 +201,7 @@ class AccountManagementState extends State<AccountManagement> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
         onPressed: _createAccount,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppColors.white),
       ),
     );
   }
@@ -224,18 +226,18 @@ class AccountManagementState extends State<AccountManagement> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
+          backgroundColor: AppColors.darkgrey,
           title: const Text("Confirm Deletion",
-              style: TextStyle(color: Colors.white)),
+              style: TextStyle(color: AppColors.white)),
           content: const Text("Are you sure you want to delete this account?",
-              style: TextStyle(color: Colors.white70)),
+              style: TextStyle(color: AppColors.white)),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
               },
-              child:
-                  const Text("Cancel", style: TextStyle(color: Colors.white)),
+              child: const Text("Cancel",
+                  style: TextStyle(color: AppColors.white)),
             ),
             TextButton(
               onPressed: () {

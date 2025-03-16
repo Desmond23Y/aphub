@@ -20,7 +20,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
 
   List<Map<String, dynamic>> venues = [];
   List<String> timeSlots = [
-    "All", // Add "All" as the first option
     "08:30",
     "09:00",
     "09:30",
@@ -49,7 +48,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
     "Meeting Room"
   ];
 
-  bool isGenerating = false; // Track if time slots are being generated
+  bool isGenerating = false;
   String searchQuery = ""; // For search functionality
 
   @override
