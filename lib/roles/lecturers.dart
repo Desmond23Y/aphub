@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:aphub/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,7 +7,6 @@ import 'package:aphub/screens/lecturer_booking_page.dart';
 import 'package:aphub/screens/lecturer_faq_page.dart';
 import 'package:aphub/screens/lecturer_history_page.dart';
 import 'package:aphub/screens/lecturer_notification_page.dart';
-import 'package:intl/intl.dart';
 
 class LecturerPage extends StatefulWidget {
   final String tpNumber;
@@ -19,6 +19,7 @@ class LecturerPage extends StatefulWidget {
 class LecturerPageState extends State<LecturerPage> {
   late String name;
   late String tpNumber;
+  Timer? _autoUpdateTimer;
 
   @override
   void initState() {
@@ -27,6 +28,19 @@ class LecturerPageState extends State<LecturerPage> {
     name = "Loading...";
     _fetchLecturerData();
     _updateBookingStates();
+    _autoUpdateTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        _updateBookingStates();
+      } else {
+        timer.cancel(); // Stop timer when widget is removed
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoUpdateTimer?.cancel(); // Prevent memory leaks
+    super.dispose();
   }
 
   Future<void> _fetchLecturerData() async {
@@ -52,39 +66,38 @@ class LecturerPageState extends State<LecturerPage> {
   }
 
   void _updateBookingStates() async {
-    print("Updating booking states...");
-    String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
     QuerySnapshot bookingsSnapshot = await FirebaseFirestore.instance
         .collection('TPbooking')
-        .where('status',
-            whereIn: ['scheduled', 'ongoing']) // Check both scheduled & ongoing
+        .where('status', whereIn: ['scheduled', 'ongoing'])
         .where('userId', isEqualTo: tpNumber)
         .get();
 
     for (var bookingDoc in bookingsSnapshot.docs) {
       var bookingData = bookingDoc.data() as Map<String, dynamic>;
 
-      // Convert Firestore `startTime` and `endTime` to DateTime
+      // Use the actual booking date
+      String bookingDate = bookingData['date'];
       DateTime startTime =
-          DateTime.parse("$today ${bookingData['startTime']}:00");
-      DateTime endTime = DateTime.parse("$today ${bookingData['endTime']}:00");
+          DateTime.parse("$bookingDate ${bookingData['startTime']}:00");
+      DateTime endTime =
+          DateTime.parse("$bookingDate ${bookingData['endTime']}:00");
 
       // Get current local time
       DateTime now = DateTime.now().toLocal();
 
       print("Now: $now, Start: $startTime, End: $endTime");
 
-      if (now.isAfter(endTime)) {
-        // Change "ongoing" to "completed"
+      // Update status only if it needs to change
+      if (bookingData['status'] != 'history' && now.isAfter(endTime)) {
         await FirebaseFirestore.instance
             .collection('TPbooking')
             .doc(bookingDoc.id)
             .update({'status': 'history'});
 
         print("Updated ${bookingData['venueName']} to completed.");
-      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
-        // Change "scheduled" to "ongoing"
+      } else if (bookingData['status'] == 'scheduled' &&
+          now.isAfter(startTime) &&
+          now.isBefore(endTime)) {
         await FirebaseFirestore.instance
             .collection('TPbooking')
             .doc(bookingDoc.id)
