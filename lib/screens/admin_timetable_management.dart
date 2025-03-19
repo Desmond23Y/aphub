@@ -1,3 +1,4 @@
+import 'package:aphub/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -148,26 +149,26 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         title: const Text("Time Slot Management",
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.grey[900],
+            style: TextStyle(color: AppColors.white)),
+        backgroundColor: AppColors.darkdarkgrey,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: AppColors.white),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
+            icon: const Icon(Icons.search, color: AppColors.white),
             onPressed: () {
               _showSearchDialog(context);
             },
           ),
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
+            icon: const Icon(Icons.filter_list, color: AppColors.white),
             onPressed: () {
               _showFilterDialog(context);
             },
@@ -193,7 +194,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                         return const Center(
                           child: Text("No time slots available",
-                              style: TextStyle(color: Colors.white)),
+                              style: TextStyle(color: AppColors.white)),
                         );
                       }
 
@@ -220,7 +221,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                       if (filteredSlots.isEmpty) {
                         return const Center(
                           child: Text("No matching time slots",
-                              style: TextStyle(color: Colors.white)),
+                              style: TextStyle(color: AppColors.white)),
                         );
                       }
 
@@ -254,7 +255,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                 child: Text(
                                   "Date: $date",
                                   style: const TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold),
                                 ),
@@ -269,14 +270,14 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                     a["startTime"].compareTo(b["startTime"]));
 
                                 return Card(
-                                  color: Colors.grey[900],
+                                  color: AppColors.darkdarkgrey,
                                   margin: const EdgeInsets.symmetric(
                                       horizontal: 8, vertical: 6),
                                   child: ExpansionTile(
                                     title: Text(
                                       venueName,
                                       style: const TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.white,
                                           fontWeight: FontWeight.bold),
                                     ),
                                     children: slots.map((slot) {
@@ -291,7 +292,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                         ),
                                         trailing: IconButton(
                                           icon: const Icon(Icons.info_outline,
-                                              color: Colors.white),
+                                              color: AppColors.white),
                                           onPressed: () {
                                             _showVenueInfoDialog(context, slot);
                                           },
@@ -312,9 +313,9 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.blue,
-        icon: const Icon(Icons.calendar_today, color: Colors.white),
+        icon: const Icon(Icons.calendar_today, color: AppColors.white),
         label: const Text("Generate Weekly Time Slots",
-            style: TextStyle(color: Colors.white)),
+            style: TextStyle(color: AppColors.white)),
         onPressed: () => _selectWeek(context),
       ),
     );
@@ -325,25 +326,25 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
+          backgroundColor: AppColors.darkdarkgrey,
           title: Text(
             slot["venueName"],
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.white),
           ),
           content: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text("Block: ${slot["block"]}",
-                  style: const TextStyle(color: Colors.white)),
+                  style: const TextStyle(color: AppColors.white)),
               Text("Level: ${slot["level"]}",
-                  style: const TextStyle(color: Colors.white)),
+                  style: const TextStyle(color: AppColors.white)),
               Text("Venue Type: ${slot["venueType"]}",
-                  style: const TextStyle(color: Colors.white)),
+                  style: const TextStyle(color: AppColors.white)),
               Text("Capacity: ${slot["capacity"]}",
-                  style: const TextStyle(color: Colors.white)),
+                  style: const TextStyle(color: AppColors.white)),
               Text("Equipment: ${slot["equipment"].join(", ")}",
-                  style: const TextStyle(color: Colors.white)),
+                  style: const TextStyle(color: AppColors.white)),
             ],
           ),
           actions: [
@@ -351,7 +352,8 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Close", style: TextStyle(color: Colors.white)),
+              child:
+                  const Text("Close", style: TextStyle(color: AppColors.white)),
             ),
           ],
         );
@@ -364,14 +366,14 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
+          backgroundColor: AppColors.darkdarkgrey,
           title: const Text("Search Venues",
-              style: TextStyle(color: Colors.white)),
+              style: TextStyle(color: AppColors.white)),
           content: TextField(
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppColors.white),
             decoration: const InputDecoration(
               hintText: "Enter venue name...",
-              hintStyle: TextStyle(color: Colors.grey),
+              hintStyle: TextStyle(color: AppColors.darkgrey),
             ),
             onChanged: (value) {
               setState(() {
@@ -384,7 +386,8 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Close", style: TextStyle(color: Colors.white)),
+              child:
+                  const Text("Close", style: TextStyle(color: AppColors.white)),
             ),
           ],
         );
@@ -397,8 +400,9 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text("Filters", style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.darkdarkgrey,
+          title:
+              const Text("Filters", style: TextStyle(color: AppColors.white)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -423,7 +427,8 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Close", style: TextStyle(color: Colors.white)),
+              child:
+                  const Text("Close", style: TextStyle(color: AppColors.white)),
             ),
           ],
         );
@@ -435,15 +440,15 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
   Widget _buildDropdown(String label, List<String> items, String? selectedValue,
       Function(String?) onChanged) {
     return DropdownButton<String>(
-      dropdownColor: Colors.grey[900],
+      dropdownColor: AppColors.darkdarkgrey,
       value: selectedValue,
-      hint: Text(label, style: const TextStyle(color: Colors.white)),
-      icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+      hint: Text(label, style: const TextStyle(color: AppColors.white)),
+      icon: const Icon(Icons.arrow_drop_down, color: AppColors.white),
       onChanged: onChanged,
       items: items.map((String item) {
         return DropdownMenuItem<String>(
           value: item,
-          child: Text(item, style: const TextStyle(color: Colors.white)),
+          child: Text(item, style: const TextStyle(color: AppColors.white)),
         );
       }).toList(),
     );

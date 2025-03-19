@@ -206,9 +206,9 @@ class _AdminPageState extends State<AdminPage> {
                 var booking = bookings[index];
                 return _buildBookingItem(
                   booking['venueName'],
-                  booking['date'],
+                  'Date: ${booking['date']}',
                   'Time: ${booking['startTime']} - ${booking['endTime']}',
-                  booking['name'],
+                  'Name: ${booking['name']}',
                 );
               },
             ),
