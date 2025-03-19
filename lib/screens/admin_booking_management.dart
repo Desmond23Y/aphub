@@ -265,7 +265,6 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
       DocumentSnapshot tpFormDoc = await tpFormRef.doc(docId).get();
 
       if (!tpFormDoc.exists) {
-        print("Document does not exist in TPform");
         return;
       }
 
@@ -289,8 +288,6 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
         ),
       );
     } catch (e) {
-      print("Error approving request: $e");
-
       if (!mounted) return;
 
       // Show error message
@@ -341,7 +338,6 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
                         await tpFormRef.doc(docId).get();
 
                     if (!tpFormDoc.exists) {
-                      print("Document does not exist in TPform");
                       return;
                     }
 
@@ -382,8 +378,6 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
 
                     Navigator.of(context, rootNavigator: true).pop();
                   } catch (e) {
-                    print("Error rejecting request: $e");
-
                     if (!mounted) return;
 
                     // Show error message
@@ -427,10 +421,7 @@ class _AdminBookingManagementState extends State<AdminBookingManagement> {
         "bstatus": "cancelled", // Booking status
         "venueType": "Auditorium", // Example, adjust as needed
       });
-
-      print("Notification sent successfully!");
     } catch (e) {
-      print("Error sending notification: $e");
       rethrow;
     }
   }
