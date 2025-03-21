@@ -363,7 +363,11 @@ class _AdminPageState extends State<AdminPage> {
       String venue, String date, String time, String user) {
     return ListTile(
       leading: const Icon(Icons.event, color: AppColors.lightgrey),
-      title: Text(venue, style: const TextStyle(color: AppColors.white)),
+      title: Text(venue,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.white,
+          )),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -380,7 +384,9 @@ class _AdminPageState extends State<AdminPage> {
       String name, String block, String capacity, String status) {
     return ListTile(
       leading: const Icon(Icons.business, color: AppColors.lightgrey),
-      title: Text(name, style: const TextStyle(color: AppColors.white)),
+      title: Text(name,
+          style: const TextStyle(
+              fontWeight: FontWeight.bold, color: AppColors.white)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -396,7 +402,9 @@ class _AdminPageState extends State<AdminPage> {
   Widget _buildModuleItem(String name, String lecturer, String durations) {
     return ListTile(
       leading: const Icon(Icons.meeting_room, color: AppColors.lightgrey),
-      title: Text(name, style: const TextStyle(color: AppColors.white)),
+      title: Text(name,
+          style: const TextStyle(
+              fontWeight: FontWeight.bold, color: AppColors.white)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
