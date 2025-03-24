@@ -1,19 +1,22 @@
 import 'dart:async';
+import 'package:aphub/models/student_booking_model2.dart';
 import 'package:flutter/material.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/roles/students.dart';
 import 'package:aphub/screens/student_history_page.dart';
 import 'package:aphub/screens/student_notification_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:aphub/screens/student_form_page.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
-import 'package:aphub/login_page.dart'; 
+import 'package:aphub/login_page.dart';
+import 'package:aphub/models/student_booking_model.dart'; 
+import 'package:aphub/models/student_updateschedule_model.dart';
 
 
 class StudentBookingPage extends StatefulWidget {
   final String tpNumber;
+  
 
-  const StudentBookingPage({super.key, required this.tpNumber});
+  StudentBookingPage({super.key, required this.tpNumber});
 
   @override
   StudentBookingPageState createState() => StudentBookingPageState();
@@ -21,12 +24,19 @@ class StudentBookingPage extends StatefulWidget {
 }
 
 class StudentBookingPageState extends State<StudentBookingPage> {
-  // State variables for filters
+  late StudentUpdateScheduleModel _scheduleModel;
   String selectedFacility = 'All';
   String selectedBlock = 'All';
   String selectedFloor = 'All';
   String selectedStatus = 'All';
   String selectedDate = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleModel = StudentUpdateScheduleModel(tpNumber: widget.tpNumber); // ✅ Correct placement
+    _scheduleModel.startCheckingBookingStatus(); // ✅ No error now
+  }
 
   Future<void> _logout() async {
     try {
@@ -45,13 +55,6 @@ class StudentBookingPageState extends State<StudentBookingPage> {
         const SnackBar(content: Text('Failed to log out. Please try again.')),
       );
     }
-  }
-
-  @override
-
-  void initState() {
-    super.initState();
-    _checkAndUpdateBookingStatus();
   }
 
   @override
@@ -133,376 +136,251 @@ class StudentBookingPageState extends State<StudentBookingPage> {
     );
   }
 
-Widget _buildCurrentBooking() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    margin: const EdgeInsets.symmetric(horizontal: 20),
-    decoration: BoxDecoration(
-      color: AppColors.darkdarkgrey,
-      borderRadius: BorderRadius.circular(10),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.darkdarkgrey.withOpacity(0.3),
-          blurRadius: 10,
-          spreadRadius: 2,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Current Booking',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.white,
+  Widget _buildCurrentBooking() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.darkdarkgrey,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.darkdarkgrey.withOpacity(0.3),
+            blurRadius: 10,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            DropdownButton<String>(
-              dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
-              value: selectedFacility,
-              items: ['All', 'Lab', 'Meeting room', 'Classroom', 'Auditorium']
-                  .map((facility) => DropdownMenuItem(
-                        value: facility,
-                        child: Text(
-                          facility,
-                          style: const TextStyle(color: AppColors.white),
-                        ),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedFacility = value!;
-                });
-              },
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Current Booking',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.white,
             ),
-            DropdownButton<String>(
-              dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
-              value: selectedStatus,
-              items: ['All', 'Pending', 'Scheduled', 'Ongoing']
-                  .map((status) => DropdownMenuItem(
-                        value: status,
-                        child: Text(
-                          status,
-                          style: const TextStyle(color: AppColors.white),
-                        ),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedStatus = value!;
-                });
-              },
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              DropdownButton<String>(
+                dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
+                value: selectedFacility,
+                items: ['All', 'Lab', 'Meeting room', 'Classroom', 'Auditorium']
+                    .map((facility) => DropdownMenuItem(
+                          value: facility,
+                          child: Text(
+                            facility,
+                            style: const TextStyle(color: AppColors.white),
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedFacility = value!;
+                  });
+                },
+              ),
+              DropdownButton<String>(
+                dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
+                value: selectedStatus,
+                items: ['All', 'Pending', 'Scheduled', 'Ongoing']
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(
+                            status,
+                            style: const TextStyle(color: AppColors.white),
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedStatus = value!;
+                  });
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          StreamBuilder<List<StudentBookingModel>>(
+            stream: StudentBookingModel.getFilteredBookings(
+              widget.tpNumber,
+              selectedFacility,
+              selectedStatus,
             ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('TPbooking') // Query the TPbooking collection
-              .where('userId', isEqualTo: widget.tpNumber) // Filter by userId
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
 
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return _buildNoDataMessage('No bookings available');
-            }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return _buildNoDataMessage('No bookings available');
+              }
 
-            final bookings = snapshot.data!.docs;
+              final filteredList = snapshot.data!;
 
-            // Apply filters locally
-            final filteredBookings = bookings.where((booking) {
-              final status = booking['status'] ?? 'unknown';
-              final venueType = booking['venueType'] ?? 'Unknown';
-
-              // Filter by selected status
-              bool matchesStatus = selectedStatus == 'All' ||
-                  status.toLowerCase() == selectedStatus.toLowerCase();
-
-              // Filter by selected facility
-              bool matchesFacility = selectedFacility == 'All' ||
-                  venueType == selectedFacility;
-
-              return matchesStatus && matchesFacility;
-            }).toList();
-
-            if (filteredBookings.isEmpty) {
-              return _buildNoDataMessage('No bookings match the selected filters');
-            }
-
-            // Filter the bookings to include only ongoing, scheduled, and pending statuses
-            final filteredList = filteredBookings.where((booking) {
-              final status = booking['status']?.toLowerCase() ?? 'unknown';
-              return status == 'ongoing' || status == 'scheduled' || status == 'pending';
-            }).toList();
-
-            // Calculate the total number of bookings
-            final totalBookings = filteredList.length;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Bookings: $totalBookings', // Display the total number of bookings
-                  style: const TextStyle(
-                    color: AppColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Bookings: ${filteredList.length}',
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredList.length, // Use the filtered list length
-                  itemBuilder: (context, index) {
-                    final booking = filteredList[index]; // Use the filtered list
-                    final bookingId = booking.id; // Get the booking ID
-                    final status = booking['status'] ?? 'unknown';
-                    final startTime = booking['startTime'] ?? 'N/A';
-                    final endTime = booking['endTime'] ?? 'N/A';
-                    final timeRange = '$startTime - $endTime';
-                    final venueName = booking['venueName'] ?? 'Unknown';
-                    final venueType = booking['venueType'] ?? 'Unknown';
-                    final date = booking['date'] ?? 'Unknown';
+                  const SizedBox(height: 10),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: filteredList.length,
+                    itemBuilder: (context, index) {
+                      final booking = filteredList[index];
 
-                    // Determine the color based on the status
-                    Color statusColor;
-                    switch (status.toLowerCase()) {
-                      case 'scheduled':
-                        statusColor = Colors.orange;
-                        break;
-                      case 'ongoing':
-                        statusColor = Colors.green;
-                        break;
-                      case 'pending':
-                        statusColor = Colors.yellow;
-                        break;
-                      default:
-                        statusColor = AppColors.white; // Default color if status is unknown
-                    }
+                      Color statusColor;
+                      switch (booking.status.toLowerCase()) {
+                        case 'scheduled':
+                          statusColor = Colors.orange;
+                          break;
+                        case 'ongoing':
+                          statusColor = Colors.green;
+                          break;
+                        case 'pending':
+                          statusColor = Colors.yellow;
+                          break;
+                        default:
+                          statusColor = AppColors.white;
+                      }
 
-                    // Dynamic opacity for the shadow
-                    const opacity = 0.5; // You can adjust this value as needed
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8), // Add margin
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8), // Rounded corners
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.darkgrey.withOpacity(opacity), // Shadow color with dynamic opacity
-                            blurRadius: 6, // Blur radius
-                            spreadRadius: 0.5, // Spread radius
-                            offset: const Offset(0, 4), // Shadow offset
-                          ),
-                        ],
-                      ),
-                      child: Container(
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.black.withOpacity(0.7), // Black background with 70% opacity
-                          borderRadius: BorderRadius.circular(8), // Match the outer container's border radius
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.darkgrey.withOpacity(0.5),
+                              blurRadius: 6,
+                              spreadRadius: 0.5,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Add padding inside ListTile
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Date: $date', // Display the date
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8), // Add spacing between date and timeRange
-                              Text(
-                                timeRange,
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8), // Add spacing between timeRange and venue details
-                              Text(
-                                'Venue: $venueName',
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 4), // Add spacing between venue name and type
-                              Text(
-                                'Type: $venueType',
-                                style: const TextStyle(
-                                  color: AppColors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Status Container
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Padding inside the box
-                                decoration: BoxDecoration(
-                                  color: statusColor.withOpacity(0.2), // Background color with slight opacity
-                                  borderRadius: BorderRadius.circular(12), // Rounded edges
-                                  border: Border.all(
-                                    color: statusColor, // Border color
-                                    width: 1, // Border width
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date: ${booking.date}',
+                                  style: const TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                child: Text(
-                                  status, // Display the full status text
-                                  style: TextStyle(
-                                    color: statusColor, // Text color
-                                    fontSize: 12, // Adjust font size if needed
-                                    fontWeight: FontWeight.bold, // Bold text
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${booking.startTime} - ${booking.endTime}',
+                                  style: const TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 14,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8), // Add spacing between status and cancel button
-                              // Cancel Button
-                              if (status.toLowerCase() == 'pending' || status.toLowerCase() == 'scheduled')
-                                IconButton(
-                                  icon: const Icon(Icons.cancel, color: Colors.red),
-                                    onPressed: () async {
-                                    // Show a confirmation dialog
-                                    bool confirmCancel = await showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Cancel Booking'),
-                                        content: const Text('Are you sure you want to cancel this booking?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, false),
-                                            child: const Text('No'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context, true),
-                                            child: const Text('Yes'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-
-                                    if (confirmCancel == true) {
-                                      try {
-                                        // Step 1: Update the status in the TPbooking collection
-                                        await FirebaseFirestore.instance
-                                            .collection('TPbooking')
-                                            .doc(bookingId)
-                                            .update({'status': 'cancelled'});
-
-                                        // Step 2: Update the status in the TPform collection where TPbookingId matches
-                                        final tpFormQuery = await FirebaseFirestore.instance
-                                            .collection('TPform')
-                                            .where('TPbookingId', isEqualTo: bookingId)
-                                            .get();
-
-                                        if (tpFormQuery.docs.isNotEmpty) {
-                                          // If a matching TPform document is found, update its status
-                                          for (final doc in tpFormQuery.docs) {
-                                            await FirebaseFirestore.instance
-                                                .collection('TPform')
-                                                .doc(doc.id)
-                                                .update({'status': 'cancelled'});
-                                          }
-                                        }
-
-                                        // Step 3: Update the timeslots collection from "scheduled" to "available"
-                                        debugPrint('Querying timeslots with:');
-                                        debugPrint('venueName: $venueName');
-                                        debugPrint('startTime: $startTime');
-                                        debugPrint('endTime: $endTime');
-                                        debugPrint('date: $date');
-
-                                        final timeslotQuery = await FirebaseFirestore.instance
-                                            .collection('timeslots')
-                                            .where('venueName', isEqualTo: venueName)
-                                            .where('startTime', isEqualTo: startTime)
-                                            .where('endTime', isEqualTo: endTime)
-                                            .where('date', isEqualTo: date)
-                                            .get();
-
-                                        if (timeslotQuery.docs.isNotEmpty) {
-                                          // Log the found document
-                                          debugPrint('Found matching timeslot document:');
-                                          debugPrint(timeslotQuery.docs.first.data().toString());
-
-                                          // Update the first matching document (assuming there's only one)
-                                          final timeslotDocRef = timeslotQuery.docs.first.reference;
-                                          await timeslotDocRef.update({'status': 'available'});
-                                          debugPrint('Timeslot status updated to "available"');
-                                        } else {
-                                          debugPrint('No matching timeslot document found');
-                                          throw Exception('Matching timeslot not found');
-                                        }
-
-                                        // Step 4: Add a notification to the 'notifications' collection
-                                        await FirebaseFirestore.instance.collection('notifications').add({
-                                          'date': date,
-                                          'bstatus': 'cancelled',
-                                          'venueName': venueName,
-                                          'venueType': venueType,
-                                          'userId': widget.tpNumber,
-                                          'bookedtime': DateTime.now(),
-                                          'message':
-                                              'Your booking for "$venueName" on $date from $startTime to $endTime has been cancelled successfully.',
-                                          'nstatus': 'new',
-                                          'startTime': startTime,
-                                          'endTime': endTime,
-                                        });
-
-                                        // Show a success message
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Booking cancelled successfully')),
-                                        );
-                                      } catch (e) {
-                                        // Handle any errors
-                                        debugPrint('Error cancelling booking: $e');
-                                        // ignore: use_build_context_synchronously
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Failed to cancel booking: $e')),
-                                        );
-                                      }
-                                    }
-                                  },
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Venue: ${booking.venueName}',
+                                  style: const TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Type: ${booking.venueType}',
+                                  style: const TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: statusColor, width: 1),
+                                  ),
+                                  child: Text(
+                                    booking.status,
+                                    style: TextStyle(
+                                      color: statusColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                if (booking.status.toLowerCase() == 'scheduled' ||
+                                    booking.status.toLowerCase() == 'pending')
+                                  IconButton(
+                                    icon: const Icon(Icons.cancel, color: Colors.red),
+                                    onPressed: () => _cancelBooking(booking),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            );
-          },
-        ),
-      ],
-    ),
-  );
-}
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+    Future<void> _cancelBooking(StudentBookingModel booking) async {
+    try {
+      await StudentBookingModel.cancelBooking(
+        bookingId: booking.bookingId,
+        venueName: booking.venueName,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        date: booking.date,
+        venueType: booking.venueType,
+        userId: widget.tpNumber,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking cancelled successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to cancel booking: $e')),
+      );
+    }
+  }
+
 
 Widget _buildBooking() {
   return Container(
@@ -613,7 +491,7 @@ Widget _buildBooking() {
               DropdownButton<String>(
                 dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                 value: selectedBlock,
-                items: ['All', 'A', 'B', 'C']
+                items: ['All', 'A', 'B', 'C','D','E','F','G']
                     .map((block) => DropdownMenuItem(
                           value: block,
                           child: Text(
@@ -631,7 +509,7 @@ Widget _buildBooking() {
               DropdownButton<String>(
                 dropdownColor: AppColors.darkdarkgrey.withOpacity(0.7),
                 value: selectedFloor,
-                items: ['All', '1', '2', '3', '4', '5']
+                items: ['All', '1', '2', '3', '4', '5','6','7','8','9']
                     .map((floor) => DropdownMenuItem(
                           value: floor,
                           child: Text(
@@ -797,7 +675,7 @@ Widget _buildBooking() {
 
                                         return ElevatedButton(
                                           onPressed: () {
-                                            _confirmBooking(context, timeslot.reference, timeRange);
+                                            _confirmBooking(context, timeslot.reference, timeRange, widget.tpNumber);
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: AppColors.darkgrey,
@@ -831,6 +709,8 @@ Widget _buildBooking() {
   );
 }
 
+
+
   Widget _buildNoDataMessage(String message) {
     return Container(
       width: double.infinity,
@@ -849,230 +729,9 @@ Widget _buildBooking() {
     );
   }
 
-void _confirmBooking(BuildContext t, DocumentReference timeslotRef, String timeRange) async {
-  // Check the current number of bookings for the student
-  final bookingQuery = await FirebaseFirestore.instance
-      .collection('TPbooking')
-      .where('userId', isEqualTo: widget.tpNumber)
-      .where('status', whereIn: ['ongoing', 'scheduled', 'pending'])
-      .get();
-
-  // If the student has 5 or more bookings, show an error message
-  if (bookingQuery.docs.length >= 5) {
-    if (mounted) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(t).showSnackBar(
-        const SnackBar(content: Text('You have exceeded your booking limit: 5')),
-      );
-    }
-    return; // Exit the function early
-  }
-
-  // Show the confirmation dialog
-  final confirmed = await showDialog<bool>(
-    // ignore: use_build_context_synchronously
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text(
-          'Confirm Booking',
-          style: TextStyle(color: AppColors.white),
-        ),
-        backgroundColor: AppColors.darkdarkgrey,
-        content: Text(
-          'Are you sure you want to book the timeslot $timeRange?',
-          style: const TextStyle(color: AppColors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext, false); // User canceled
-            },
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.white),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext, true); // User confirmed
-            },
-            child: const Text(
-              'Confirm',
-              style: TextStyle(color: AppColors.white),
-            ),
-          ),
-        ],
-      );
-    },
-  );
-
-  // If the user confirmed the booking
-  if (confirmed == true) {
-    try {
-      // Get the timeslot data
-      final timeslotSnapshot = await timeslotRef.get();
-      final timeslotData = timeslotSnapshot.data() as Map<String, dynamic>;
-
-      // Fetch the student name from the `users` collection using the TPNumber
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users') // Access the `users` collection
-          .doc(widget.tpNumber) // Use the TPNumber to fetch the document
-          .get();
-
-      if (!userDoc.exists) {
-        throw Exception('User not found');
-      }
-
-      final studentName = userDoc['name'] ?? 'Unknown'; // Get the student name
-
-      if (timeslotData['venueType'] == "Auditorium") {
-        // Navigate to StudentFormPage instead of booking directly
-        Navigator.push(
-          // ignore: use_build_context_synchronously
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudentFormPage(
-              tpNumber: widget.tpNumber,
-              timeslotId: timeslotRef.id, // Pass the timeslot document ID
-            ),
-          ),
-        );
-      } else {
-        // Normal booking process
-        await timeslotRef.update({'status': 'scheduled'});
-
-        await FirebaseFirestore.instance.collection('TPbooking').add({
-          'date': timeslotData['date'],
-          'endTime': timeslotData['endTime'],
-          'startTime': timeslotData['startTime'],
-          'status': 'scheduled',
-          'venueName': timeslotData['venueName'],
-          'venueType': timeslotData['venueType'],
-          'userId': widget.tpNumber,
-          'name': studentName, // Include the student name
-          'bookedtime': DateTime.now(),
-        });
-
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'date': timeslotData['date'],
-          'bstatus': 'scheduled',
-          'venueName': timeslotData['venueName'],
-          'venueType': timeslotData['venueType'],
-          'userId': widget.tpNumber,
-          'bookedtime': DateTime.now(),
-          'message': 'Your booking for "${timeslotData['venueName']}" has been scheduled for ${timeslotData['date']} and the time is ${timeslotData['startTime']} - ${timeslotData['endTime']}.',
-          'nstatus': 'new',
-          'startTime': timeslotData['startTime'],
-          'endTime': timeslotData['endTime'],
-        });
-
-        // Show a SnackBar to indicate success
-        if (mounted) {
-          // ignore: use_build_context_synchronously
-          ScaffoldMessenger.of(t).showSnackBar(
-            const SnackBar(content: Text('Booking successful!')),
-          );
-        }
-      }
-    } catch (e) {
-      // Show a SnackBar to indicate an error
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    }
-  }
-}
-
-void _checkAndUpdateBookingStatus() {
-  Timer.periodic(const Duration(minutes: 1), (timer) async {
-    final now = DateTime.now();
-    final bookings = await FirebaseFirestore.instance
-        .collection('TPbooking')
-        .where('userId', isEqualTo: widget.tpNumber)
-        .get();
-
-    for (final booking in bookings.docs) {
-      final startTime = booking['startTime'];
-      final endTime = booking['endTime'];
-      final date = booking['date'];
-      final status = booking['status'];
-      final venueName = booking['venueName'];
-      final venueType = booking['venueType'];
-
-      final bookingDateTime = DateTime.parse('$date $startTime');
-      final endDateTime = DateTime.parse('$date $endTime');
-
-      if (status == 'scheduled' && now.isAfter(bookingDateTime)) {
-        if (now.isBefore(endDateTime)) {
-          // Update status to "ongoing" if the current time is between startTime and endTime
-          await FirebaseFirestore.instance
-              .collection('TPbooking')
-              .doc(booking.id)
-              .update({'status': 'ongoing'});
-
-          // Send notification for "ongoing" status
-          await FirebaseFirestore.instance.collection('notifications').add({
-            'date': date,
-            'bstatus': 'ongoing',
-            'venueName': venueName,
-            'venueType': venueType,
-            'userId': widget.tpNumber,
-            'bookedtime': DateTime.now(),
-            'message':
-                'Your booking for "$venueName" on $date from $startTime is currently ongoing.',
-            'nstatus': 'new',
-            'startTime': startTime,
-            'endTime': endTime,
-          });
-        } else {
-          // Update status to "completed" if the current time is after endTime
-          await FirebaseFirestore.instance
-              .collection('TPbooking')
-              .doc(booking.id)
-              .update({'status': 'completed'});
-
-          // Send notification for "completed" status
-          await FirebaseFirestore.instance.collection('notifications').add({
-            'date': date,
-            'bstatus': 'completed',
-            'venueName': venueName,
-            'venueType': venueType,
-            'userId': widget.tpNumber,
-            'bookedtime': DateTime.now(),
-            'message':
-                'Your booking for "$venueName" on $date from $startTime to $endTime is currently completed.',
-            'nstatus': 'new',
-            'startTime': startTime,
-            'endTime': endTime,
-          });
-        }
-      } else if (status == 'ongoing' && now.isAfter(endDateTime)) {
-        // Update status to "completed" if the current time is after endTime
-        await FirebaseFirestore.instance
-            .collection('TPbooking')
-            .doc(booking.id)
-            .update({'status': 'completed'});
-
-        // Send notification for "completed" status
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'date': date,
-          'bstatus': 'completed',
-          'venueName': venueName,
-          'venueType': venueType,
-          'userId': widget.tpNumber,
-          'bookedtime': DateTime.now(),
-          'message':
-              'Your booking for "$venueName" on $date from $startTime to $endTime is currently completed.',
-          'nstatus': 'new',
-          'startTime': startTime,
-          'endTime': endTime,
-        });
-      }
-    }
-  });
+void _confirmBooking(BuildContext context, DocumentReference timeslotRef, String timeRange, String tpNumber) {
+  final bookingModel = StudentBookingModel2();
+  bookingModel.confirmBooking(context, timeslotRef, timeRange, tpNumber);
 }
 
 

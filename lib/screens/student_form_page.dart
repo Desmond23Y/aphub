@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:aphub/utils/app_colors.dart';
+import 'package:aphub/models/student_form_model.dart'; 
 
 class StudentFormPage extends StatefulWidget {
   final String tpNumber;
   final String timeslotId;
+  
+  
 
   const StudentFormPage({super.key, required this.tpNumber, required this.timeslotId});
 
@@ -17,6 +20,7 @@ class StudentFormPageState extends State<StudentFormPage> {
   final TextEditingController eventNameController = TextEditingController();
   final TextEditingController eventTypeController = TextEditingController();
   final TextEditingController estPersonController = TextEditingController();
+  
 
   Map<String, dynamic>? timeslotData;
 
@@ -42,120 +46,26 @@ class StudentFormPageState extends State<StudentFormPage> {
     }
   }
 
-void submitBooking() async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      if (timeslotData == null) {
-        throw Exception("Timeslot data is null.");
-      }
-
-      // Fetch the student name from the `users` collection
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.tpNumber) // Use the TPNumber to fetch the document
-          .get();
-
-      if (!userDoc.exists) {
-        throw Exception("User not found in the users collection.");
-      }
-
-      final studentName = userDoc['name'] ?? 'Unknown'; // Get the student name
-
-      // Check if estperson is a valid number
-      final estPerson = int.tryParse(estPersonController.text);
-      if (estPerson == null) {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter a valid number for estimated persons.")),
-        );
-        return;
-      }
-
-      // Proceed with booking submission
-      DocumentReference timeslotRef = FirebaseFirestore.instance.collection('timeslots').doc(widget.timeslotId);
-      await timeslotRef.update({'status': 'pending'});
-
-      DocumentReference tpBookingRef = await FirebaseFirestore.instance.collection('TPbooking').add({
-        'userId': widget.tpNumber,
-        'name': studentName, // Include the student name
-        'date': timeslotData?['date'],
-        'startTime': timeslotData?['startTime'],
-        'endTime': timeslotData?['endTime'],
-        'status': 'pending',
-        'venueName': timeslotData?['venueName'],
-        'venueType': timeslotData?['venueType'],
-        'bookedtime': DateTime.now(),
-      });
-
-      String tpBookingId = tpBookingRef.id;
-
-      await FirebaseFirestore.instance.collection('TPform').add({
-        'userId': widget.tpNumber,
-        'name': studentName, // Include the student name
-        'eventname': eventNameController.text,
-        'eventtype': eventTypeController.text,
-        'estperson': estPerson,
-        'capacity': timeslotData?['capacity'],
-        'date': timeslotData?['date'],
-        'startTime': timeslotData?['startTime'],
-        'endTime': timeslotData?['endTime'],
-        'status': 'pending',
-        'venueName': timeslotData?['venueName'],
-        'venueType': timeslotData?['venueType'],
-        'bookedtime': DateTime.now(),
-        'TPbookingId': tpBookingId,
-      });
-
-      await FirebaseFirestore.instance.collection('notifications').add({
-        'date': timeslotData?['date'],
-        'bstatus': 'pending',
-        'venueName': timeslotData?['venueName'],
-        'venueType': timeslotData?['venueType'],
-        'userId': widget.tpNumber,
-        'bookedtime': DateTime.now(),
-        'message': 'Your booking for "${timeslotData?['venueName']}" is pending approval. Your booking is on ${timeslotData?['date']} from ${timeslotData?['startTime']} to ${timeslotData?['endTime']}.',
-        'nstatus': 'new',
-        'startTime': timeslotData?['startTime'],
-        'endTime': timeslotData?['endTime'],
-      });
-
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Booking Submitted Successfully!")),
-      );
-
-      // ignore: use_build_context_synchronously
-      Navigator.pop(context);
-    } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-      //
-    }
-  }
-}
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Book Auditorium", style: TextStyle(color: AppColors.white)),
-        backgroundColor: AppColors.darkdarkgrey,
+        title: const Text("Book Auditorium", style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.grey[900],
       ),
       body: Container(
-        color: AppColors.black,
+        color: Colors.black,
         child: timeslotData == null
-            ? const Center(child: CircularProgressIndicator(color: AppColors.white))
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Enhanced Hall Information Card
+                      // Hall Information Card
                       Card(
-                        color: AppColors.darkdarkgrey,
+                        color: Colors.grey[900],
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         elevation: 5,
                         child: Padding(
@@ -165,7 +75,7 @@ void submitBooking() async {
                             children: [
                               const Text(
                                 "Hall Information",
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.white),
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                               const SizedBox(height: 16),
                               _buildReadOnlyTextField("Venue Name", timeslotData?['venueName'] ?? 'N/A'),
@@ -176,7 +86,8 @@ void submitBooking() async {
                               const SizedBox(height: 8),
                               _buildReadOnlyTextField("Date", timeslotData?['date'] ?? 'N/A'),
                               const SizedBox(height: 8),
-                              _buildReadOnlyTextField("Time", "${timeslotData?['startTime'] ?? 'N/A'} - ${timeslotData?['endTime'] ?? 'N/A'}"),
+                              _buildReadOnlyTextField("Time",
+                                  "${timeslotData?['startTime'] ?? 'N/A'} - ${timeslotData?['endTime'] ?? 'N/A'}"),
                             ],
                           ),
                         ),
@@ -186,7 +97,7 @@ void submitBooking() async {
                       // Equipment Information Card
                       if (timeslotData?['equipment'] != null)
                         Card(
-                          color: AppColors.darkdarkgrey,
+                          color: Colors.grey[900],
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           elevation: 5,
                           child: Padding(
@@ -196,12 +107,12 @@ void submitBooking() async {
                               children: [
                                 const Text(
                                   "Equipment",
-                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.white),
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                                 const SizedBox(height: 16),
                                 ...(timeslotData?['equipment'] as List<dynamic>).map((equipment) {
                                   return _buildReadOnlyTextField("Equipment", equipment);
-                                })
+                                }).toList(),
                               ],
                             ),
                           ),
@@ -220,13 +131,15 @@ void submitBooking() async {
                             _buildTextField(estPersonController, "Estimated Persons", isNumber: true),
                             const SizedBox(height: 20),
                             ElevatedButton(
-                              onPressed: submitBooking,
+                              onPressed: () async {
+                                _submitBooking();
+                              },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.lightgrey,
+                                backgroundColor: Colors.grey[400],
                                 padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              child: const Text("Submit Booking", style: TextStyle(color: AppColors.black)),
+                              child: const Text("Submit Booking", style: TextStyle(color: Colors.black)),
                             ),
                           ],
                         ),
@@ -238,6 +151,21 @@ void submitBooking() async {
       ),
     );
   }
+
+void _submitBooking() async {
+  final studentFormModel = StudentFormModel(
+    formKey: _formKey,
+    eventNameController: eventNameController,
+    eventTypeController: eventTypeController,
+    estPersonController: estPersonController,
+    tpNumber: widget.tpNumber,
+    timeslotId: widget.timeslotId,
+    timeslotData: timeslotData,
+    context: context,
+  ); // Create an instance
+  await studentFormModel.submitBooking(); // Call the method
+}
+
 
   Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false}) {
     return Card(

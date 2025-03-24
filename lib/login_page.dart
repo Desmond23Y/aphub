@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
-import '../roles/students.dart';
-import '../roles/lecturers.dart';
-import '../roles/admins.dart';
+import '../models/login_model.dart'; // Import login model
 import 'package:aphub/utils/app_colors.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,7 +14,7 @@ class LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController tpController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final LoginModel loginModel = LoginModel(); // Instance of LoginModel
 
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -47,70 +44,12 @@ class LoginPageState extends State<LoginPage>
   }
 
   Future<void> _login() async {
-    String tpNumber = tpController.text.trim().toUpperCase();
-    String password = passwordController.text.trim();
-
-    if (tpNumber.isEmpty || password.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter TP Number and Password')),
-      );
-      return;
-    }
-
-    try {
-      // Fetch the document directly using TP Number (converted to uppercase)
-      DocumentSnapshot userDoc =
-          await _firestore.collection("users").doc(tpNumber).get();
-
-      if (!userDoc.exists) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found')),
-        );
-        return;
-      }
-
-      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-      String storedPassword = userData['password'] ?? '';
-      String userRole = userData['role'] ?? '';
-
-      if (password == storedPassword) {
-        Widget nextPage;
-        if (userRole == 'Student') {
-          nextPage = StudentPage(tpNumber: tpNumber);
-        } else if (userRole == 'Lecturer') {
-          nextPage = LecturerPage(tpNumber: tpNumber);
-        } else if (userRole == 'Admin') {
-          nextPage = const AdminPage();
-        } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Role not recognized')),
-          );
-          return;
-        }
-
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => nextPage),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incorrect Password')),
-        );
-      }
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Database Error: $error')),
-      );
-    }
+    await loginModel.login(
+      context: context,
+      tpNumber: tpController.text,
+      password: passwordController.text,
+    );
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +117,7 @@ class LoginPageState extends State<LoginPage>
 
               // Login Button
               ElevatedButton(
-                onPressed: _login,
+                onPressed: _login, // Calls _login function
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.darkdarkgrey,
                   padding:
@@ -186,8 +125,7 @@ class LoginPageState extends State<LoginPage>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  shadowColor: AppColors.lightgrey
-                      .withOpacity(0.5), // Slightly transparent
+                  shadowColor: AppColors.lightgrey.withOpacity(0.5),
                   elevation: 5,
                 ),
                 child: const Text('Login',

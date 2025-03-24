@@ -6,7 +6,7 @@ import 'package:aphub/roles/students.dart';
 import 'package:aphub/screens/student_history_page.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:aphub/login_page.dart'; 
-
+import 'package:aphub/models/student_notification_model.dart';
 
 class StudentNotificationPage extends StatefulWidget {
   final String tpNumber;
@@ -192,282 +192,224 @@ class StudentNotificationPageState extends State<StudentNotificationPage> {
     }
   }
 
-  String _formatTimestamp(Timestamp timestamp) {
-    try {
-      DateTime dateTime = timestamp.toDate();
-      String year = dateTime.year.toString();
-      String month = dateTime.month.toString().padLeft(2, '0');
-      String day = dateTime.day.toString().padLeft(2, '0');
-      String hour = dateTime.hour.toString().padLeft(2, '0');
-      String minute = dateTime.minute.toString().padLeft(2, '0');
-      return '$year-$month-$day $hour:$minute'; // Return the formatted timestamp
-    } catch (e) {
-      debugPrint("Error formatting timestamp: $e");
-    }
-    return 'Unknown Time'; // Default value if formatting fails
-  }
-
-  String _formatDate(String date) {
-    try {
-      // Split the date string into parts (assuming the format is "yyyy-MM-dd")
-      List<String> parts = date.split('-');
-      if (parts.length == 3) {
-        String year = parts[0];
-        String month = parts[1];
-        String day = parts[2];
-        return '$year-$month-$day'; // Return the formatted date
+Widget _buildNotificationList() {
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: widget.tpNumber)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
       }
-    } catch (e) {
-      debugPrint("Error formatting date: $e");
-    }
-    return 'Unknown Date'; // Default value if formatting fails
-  }
 
-  Widget _buildNotificationList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('notifications')
-          .where('userId', isEqualTo: widget.tpNumber)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          debugPrint("Error fetching notifications: ${snapshot.error}");
-          return Center(
-            child: Text(
-              'Error: ${snapshot.error}',
-              style: const TextStyle(color: AppColors.white),
-            ),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          debugPrint("No notifications found for TP: ${widget.tpNumber}");
-          return const Center(
-            child: Text(
-              'No notifications available',
-              style: TextStyle(color: AppColors.white),
-            ),
-          );
-        }
-
-        // Convert documents to a list of maps with document IDs
-        var notifications = snapshot.data!.docs.map((doc) {
-          return {
-            'id': doc.id, // Include the document ID
-            'data': doc.data() as Map<String, dynamic>, // Cast to Map<String, dynamic>
-          };
-        }).toList();
-
-        // Apply filters
-        var filteredNotifications = notifications.where((notification) {
-          var data = notification['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
-          bool matchesBookingStatus = selectedBookingStatus == 'All' ||
-              (data['bstatus']?.toString().toLowerCase() ?? '') == selectedBookingStatus.toLowerCase();
-          bool matchesNotificationStatus = selectedNotificationStatus == 'All' ||
-              (data['nstatus']?.toString().toLowerCase() ?? '') == selectedNotificationStatus.toLowerCase();
-          return matchesBookingStatus && matchesNotificationStatus;
-        }).toList();
-
-        // Sort notifications: "new" notifications first, then "read" notifications
-        filteredNotifications.sort((a, b) {
-          var dataA = a['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
-          var dataB = b['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
-          String statusA = dataA['nstatus'] ?? 'read';
-          String statusB = dataB['nstatus'] ?? 'read';
-
-          if (statusA == 'new' && statusB != 'new') {
-            return -1;
-          } else if (statusA != 'new' && statusB == 'new') {
-            return 1;
-          } else {
-            return 0;
-          }
-        });
-
-        return ListView.builder(
-          itemCount: filteredNotifications.length,
-          itemBuilder: (context, index) {
-            var notification = filteredNotifications[index];
-            var docId = notification['id'] as String; // Cast to String
-            var data = notification['data'] as Map<String, dynamic>; // Cast to Map<String, dynamic>
-            String venueName = data['venueName'] as String? ?? 'Unknown Venue'; // Cast to String?
-            String date = data['date'] as String? ?? 'Unknown Date'; // Cast to String?
-            String startTime = data['startTime'] as String? ?? 'N/A'; // Cast to String?
-            String endTime = data['endTime'] as String? ?? 'N/A'; // Cast to String?
-            String bookedTime = data['bookedtime'] != null
-                ? _formatTimestamp(data['bookedtime'] as Timestamp) // Cast to Timestamp
-                : 'Unknown Time';
-            String nstatus = data['nstatus'] as String? ?? 'Unknown'; // Cast to String?
-            String bstatus = data['bstatus'] as String? ?? 'Unknown'; // Cast to String?
-
-            // Format the date manually
-            String formattedDate = _formatDate(date);
-
-            debugPrint("Notification ID: $docId | Venue: $venueName | Date: $formattedDate | Status: $nstatus | Booking Status: $bstatus");
-
-            // Set opacity based on notification status
-            double opacity = nstatus == 'new' ? 0.8 : 0.4;
-
-            // Determine color for booking status
-            Color bookingStatusColor;
-            switch (bstatus.toLowerCase()) {
-              case 'completed':
-                bookingStatusColor = Colors.green;
-                break;
-              case 'scheduled':
-                bookingStatusColor = Colors.orange;
-                break;
-              case 'pending':
-                bookingStatusColor = Colors.yellow;
-                break;
-              case 'cancelled':
-                bookingStatusColor = Colors.red;
-                break;
-              case 'ongoing':
-                bookingStatusColor = Colors.green;
-                break;
-              default:
-                bookingStatusColor = AppColors.white; // Default color
-            }
-
-            // Determine color for notification status
-            Color notificationStatusColor = nstatus == 'new' ? Colors.blue : AppColors.white;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.darkgrey.withOpacity(opacity),
-                    blurRadius: 6,
-                    spreadRadius: 0.5,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Card(
-                color: AppColors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: ListTile(
-                  title: Text(
-                    venueName,
-                    style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$formattedDate | $startTime - $endTime',
-                        style: const TextStyle(color: AppColors.white),
-                      ),
-                      Text(
-                        'Booked Time: $bookedTime',
-                        style: const TextStyle(color: AppColors.white),
-                      ),
-                      Text(
-                        'Booking Status: $bstatus',
-                        style: TextStyle(
-                          color: bookingStatusColor, // Dynamic color for booking status
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Notification Status: $nstatus',
-                        style: TextStyle(
-                          color: notificationStatusColor, // Dynamic color for notification status
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, color: AppColors.white, size: 18),
-                  onTap: () {
-                    // Get the document reference using the document ID
-                    DocumentReference docRef = FirebaseFirestore.instance
-                        .collection('notifications')
-                        .doc(docId);
-
-                    // Mark the notification as read
-                    _markNotificationAsRead(docRef);
-
-                    // Show the notification details
-                    _showNotificationDetails(data);
-                  },
-                ),
-              ),
-            );
-          },
+      if (snapshot.hasError) {
+        debugPrint("Error fetching notifications: ${snapshot.error}");
+        return Center(
+          child: Text(
+            'Error: ${snapshot.error}',
+            style: const TextStyle(color: AppColors.white),
+          ),
         );
-      },
-    );
-  }
+      }
 
-  void _showNotificationDetails(Map<String, dynamic> data) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.darkdarkgrey,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), // Rounded corners
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        debugPrint("No notifications found for TP: ${widget.tpNumber}");
+        return const Center(
+          child: Text(
+            'No notifications available',
+            style: TextStyle(color: AppColors.white),
           ),
-          title: const Text(
-            'Notification Details',
-            style: TextStyle(
-              color: AppColors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildDetailCard('Venue', data['venueName'] ?? 'Unknown Venue'),
-                const SizedBox(height: 10),
-                _buildDetailCard('Date', data['date'] ?? 'Unknown Date'),
-                const SizedBox(height: 10),
-                _buildDetailCard('Time', '${data['startTime'] ?? 'N/A'} - ${data['endTime'] ?? 'N/A'}'),
-                const SizedBox(height: 10),
-                _buildDetailCard(
-                  'Booked Time',
-                  data['bookedtime'] != null
-                      ? _formatTimestamp(data['bookedtime'])
-                      : 'Unknown Time',
+        );
+      }
+
+      // Convert Firestore documents to list of StudentNotificationModel
+      var notifications = snapshot.data!.docs
+          .map((doc) => StudentNotificationModel.fromFirestore(doc))
+          .toList();
+
+      // Apply filters
+      var filteredNotifications = notifications.where((notification) {
+        bool matchesBookingStatus = selectedBookingStatus == 'All' ||
+            notification.bstatus.toLowerCase() == selectedBookingStatus.toLowerCase();
+        bool matchesNotificationStatus = selectedNotificationStatus == 'All' ||
+            notification.nstatus.toLowerCase() == selectedNotificationStatus.toLowerCase();
+        return matchesBookingStatus && matchesNotificationStatus;
+      }).toList();
+
+      // Sort notifications: "new" notifications first, then "read" notifications
+      filteredNotifications.sort((a, b) {
+        if (a.nstatus == 'new' && b.nstatus != 'new') {
+          return -1;
+        } else if (a.nstatus != 'new' && b.nstatus == 'new') {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+
+      return ListView.builder(
+        itemCount: filteredNotifications.length,
+        itemBuilder: (context, index) {
+          var notification = filteredNotifications[index];
+
+          // Set opacity based on notification status
+          double opacity = notification.nstatus == 'new' ? 0.8 : 0.4;
+
+          // Determine color for booking status
+          Color bookingStatusColor;
+          switch (notification.bstatus.toLowerCase()) {
+            case 'completed':
+              bookingStatusColor = Colors.green;
+              break;
+            case 'scheduled':
+              bookingStatusColor = Colors.orange;
+              break;
+            case 'pending':
+              bookingStatusColor = Colors.yellow;
+              break;
+            case 'cancelled':
+              bookingStatusColor = Colors.red;
+              break;
+            case 'ongoing':
+              bookingStatusColor = Colors.green;
+              break;
+            default:
+              bookingStatusColor = AppColors.white; // Default color
+          }
+
+          // Determine color for notification status
+          Color notificationStatusColor =
+              notification.nstatus == 'new' ? Colors.blue : AppColors.white;
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.darkgrey.withOpacity(opacity),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
+                  offset: const Offset(0, 4),
                 ),
-                const SizedBox(height: 10),
-                _buildDetailCard('Message', data['message'] ?? 'No message'),
-                const SizedBox(height: 10),
-                _buildDetailCard('Notification Status', data['nstatus'] ?? 'Unknown'),
-                const SizedBox(height: 10),
-                _buildDetailCard('Booking Status', data['bstatus'] ?? 'Unknown'),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Close',
-                style: TextStyle(
-                  color: AppColors.white,
-                  fontSize: 16,
+            child: Card(
+              color: AppColors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: ListTile(
+                title: Text(
+                  notification.venueName,
+                  style: const TextStyle(
+                      color: AppColors.white, fontWeight: FontWeight.bold),
                 ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${notification.date} | ${notification.startTime} - ${notification.endTime}',
+                      style: const TextStyle(color: AppColors.white),
+                    ),
+                    Text(
+                      'Booked Time: ${notification.bookedTime}',
+                      style: const TextStyle(color: AppColors.white),
+                    ),
+                    Text(
+                      'Booking Status: ${notification.bstatus}',
+                      style: TextStyle(
+                        color: bookingStatusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Notification Status: ${notification.nstatus}',
+                      style: TextStyle(
+                        color: notificationStatusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios,
+                    color: AppColors.white, size: 18),
+                onTap: () {
+                  // Get the document reference using the document ID
+                  DocumentReference docRef = FirebaseFirestore.instance
+                      .collection('notifications')
+                      .doc(notification.id);
+
+                  // Mark the notification as read
+                  _markNotificationAsRead(docRef);
+
+                  // Show the notification details
+                  _showNotificationDetails(notification);
+                },
               ),
             ),
-          ],
-        );
-      },
-    );
-  }
+          );
+        },
+      );
+    },
+  );
+}
+
+void _showNotificationDetails(StudentNotificationModel notification) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        backgroundColor: AppColors.darkdarkgrey,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // Rounded corners
+        ),
+        title: const Text(
+          'Notification Details',
+          style: TextStyle(
+            color: AppColors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailCard('Venue', notification.venueName),
+              const SizedBox(height: 10),
+              _buildDetailCard('Date', notification.date),
+              const SizedBox(height: 10),
+              _buildDetailCard('Time', '${notification.startTime} - ${notification.endTime}'),
+              const SizedBox(height: 10),
+              _buildDetailCard('Booked Time', notification.bookedTime),
+              const SizedBox(height: 10),
+              _buildDetailCard('Message', notification.message), // ✅ Message now included!
+              const SizedBox(height: 10),
+              _buildDetailCard('Notification Status', notification.nstatus),
+              const SizedBox(height: 10),
+              _buildDetailCard('Booking Status', notification.bstatus),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(
+                color: AppColors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   /// Helper to build a detail card
   Widget _buildDetailCard(String label, String value) {

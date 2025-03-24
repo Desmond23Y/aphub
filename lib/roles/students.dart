@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:aphub/screens/student_notification_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +6,9 @@ import 'package:aphub/screens/student_history_page.dart';
 import 'package:aphub/utils/app_colors.dart';
 import 'package:aphub/screens/student_booking_page.dart';
 import 'package:firebase_auth/firebase_auth.dart'; 
-import 'package:aphub/login_page.dart'; 
+import 'package:aphub/login_page.dart';
+import 'package:aphub/models/student_updateschedule_model.dart';
+import 'package:aphub/models/student_schedulehome_model.dart'; 
 
 
 class StudentPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class StudentPage extends StatefulWidget {
 class StudentPageState extends State<StudentPage> {
   late String name;
   late String tpNumber;
+  late StudentUpdateScheduleModel _scheduleModel; 
 
 
   @override
@@ -30,7 +32,9 @@ class StudentPageState extends State<StudentPage> {
     tpNumber = widget.tpNumber; // Store the TP Number
     name = "Loading...";
     _fetchUserData();
-    _checkAndUpdateBookingStatus();
+    _scheduleModel = StudentUpdateScheduleModel(tpNumber: widget.tpNumber); // ✅ Correct placement
+    _scheduleModel.startCheckingBookingStatus(); // ✅ No error now
+    
   }
 
   Future<void> _fetchUserData() async {
@@ -152,7 +156,7 @@ Widget build(BuildContext context) {
                     child: const CircleAvatar(
                       radius: 50,
                       backgroundImage:
-                          AssetImage('assets/icons/MAE_DESMOND_ICON.jpg'),
+                          AssetImage('assets/icons/MAE_PROFILEOG_ICON.png'),
                     ),
                   ),
                 ),
@@ -246,254 +250,162 @@ Widget build(BuildContext context) {
 
 
 
-  Widget _buildScheduleTab({required bool isToday}) {
-    final today = DateTime.now().toLocal();
-    final todayFormatted =
-        "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+Widget _buildScheduleTab({required bool isToday}) {
+  final today = DateTime.now().toLocal();
+  final todayFormatted =
+      "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
 
-      return StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('TPbooking')
-            .where('userId', isEqualTo: tpNumber)
-            .where('status', whereIn: ['scheduled', 'ongoing', 'pending'])
-            .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('TPbooking')
+        .where('userId', isEqualTo: tpNumber)
+        .where('status', whereIn: ['scheduled', 'ongoing', 'pending'])
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
+      if (snapshot.hasError) {
+        return Center(child: Text('Error: ${snapshot.error}'));
+      }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Text(
-              'No ${isToday ? 'today\'s' : 'upcoming'} bookings available.',
-              style: const TextStyle(color: AppColors.white),
-            ),
-          );
-        }
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return Center(
+          child: Text(
+            'No ${isToday ? 'today\'s' : 'upcoming'} bookings available.',
+            style: const TextStyle(color: AppColors.white),
+          ),
+        );
+      }
 
-        final bookings = snapshot.data!.docs;
-        final filteredBookings = bookings.where((booking) {
-          final date = booking['date'] ?? 'Unknown';
-          return isToday ? date == todayFormatted : date != todayFormatted;
-        }).toList();
+      // Convert Firestore documents to StudentScheduleHomeModel objects
+      final bookings = snapshot.data!.docs
+          .map((doc) => StudentScheduleHomeModel.fromFirestore(doc))
+          .toList();
 
-        if (filteredBookings.isEmpty) {
-          return Center(
-            child: Text(
-              'No ${isToday ? 'today\'s' : 'upcoming'} bookings available.',
-              style: const TextStyle(color: AppColors.white),
-            ),
-          );
-        }
+      // Filter bookings based on whether it's today or upcoming
+      final filteredBookings = bookings.where((booking) {
+        return isToday ? booking.date == todayFormatted : booking.date != todayFormatted;
+      }).toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: filteredBookings.length,
-          itemBuilder: (context, index) {
-            final booking = filteredBookings[index];
-            final status = booking['status'] ?? 'unknown';
-            final startTime = booking['startTime'] ?? 'N/A';
-            final endTime = booking['endTime'] ?? 'N/A';
-            final timeRange = '$startTime - $endTime';
-            final venueName = booking['venueName'] ?? 'Unknown';
-            final venueType = booking['venueType'] ?? 'Unknown';
-            final date = booking['date'] ?? 'Unknown';
+      if (filteredBookings.isEmpty) {
+        return Center(
+          child: Text(
+            'No ${isToday ? 'today\'s' : 'upcoming'} bookings available.',
+            style: const TextStyle(color: AppColors.white),
+          ),
+        );
+      }
 
-            // Determine status color
-            Color statusColor;
-            switch (status.toLowerCase()) {
-              case 'scheduled':
-                statusColor = Colors.orange;
-                break;
-              case 'ongoing':
-                statusColor = Colors.green;
-                break;
-              case 'pending':
-                statusColor = Colors.yellow;
-                break;
-              default:
-                statusColor = AppColors.white;
-            }
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: filteredBookings.length,
+        itemBuilder: (context, index) {
+          final booking = filteredBookings[index];
 
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.darkgrey.withOpacity(0.5),
-                    blurRadius: 6,
-                    spreadRadius: 0.5,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
+          // Determine status color
+          Color statusColor;
+          switch (booking.status.toLowerCase()) {
+            case 'scheduled':
+              statusColor = Colors.orange;
+              break;
+            case 'ongoing':
+              statusColor = Colors.green;
+              break;
+            case 'pending':
+              statusColor = Colors.yellow;
+              break;
+            default:
+              statusColor = AppColors.white;
+          }
+
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.darkgrey.withOpacity(0.5),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
+                  offset: const Offset(0, 4),
                 ),
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Date: $date',
-                        style: const TextStyle(
-                          color: AppColors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        timeRange,
-                        style: const TextStyle(
-                          color: AppColors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Venue: $venueName',
-                        style: const TextStyle(
-                          color: AppColors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Type: $venueType',
-                        style: const TextStyle(
-                          color: AppColors.white,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: statusColor,
-                        width: 1,
-                      ),
-                    ),
-                    child: Text(
-                      status,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 12,
+              ],
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Date: ${booking.date}',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${booking.startTime} - ${booking.endTime}',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Venue: ${booking.venueName}',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Type: ${booking.venueType}',
+                      style: const TextStyle(
+                        color: AppColors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: statusColor,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    booking.status,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _checkAndUpdateBookingStatus() {
-  Timer.periodic(const Duration(minutes: 1), (timer) async {
-    final now = DateTime.now();
-    final bookings = await FirebaseFirestore.instance
-        .collection('TPbooking')
-        .where('userId', isEqualTo: widget.tpNumber)
-        .get();
-
-    for (final booking in bookings.docs) {
-      final startTime = booking['startTime'];
-      final endTime = booking['endTime'];
-      final date = booking['date'];
-      final status = booking['status'];
-      final venueName = booking['venueName'];
-      final venueType = booking['venueType'];
-
-      final bookingDateTime = DateTime.parse('$date $startTime');
-      final endDateTime = DateTime.parse('$date $endTime');
-
-      if (status == 'scheduled' && now.isAfter(bookingDateTime)) {
-        if (now.isBefore(endDateTime)) {
-          // Update status to "ongoing" if the current time is between startTime and endTime
-          await FirebaseFirestore.instance
-              .collection('TPbooking')
-              .doc(booking.id)
-              .update({'status': 'ongoing'});
-
-          // Send notification for "ongoing" status
-          await FirebaseFirestore.instance.collection('notifications').add({
-            'date': date,
-            'bstatus': 'ongoing',
-            'venueName': venueName,
-            'venueType': venueType,
-            'userId': widget.tpNumber,
-            'bookedtime': DateTime.now(),
-            'message':
-                'Your booking for "$venueName" on $date from $startTime is currently ongoing.',
-            'nstatus': 'new',
-            'startTime': startTime,
-            'endTime': endTime,
-          });
-        } else {
-          // Update status to "completed" if the current time is after endTime
-          await FirebaseFirestore.instance
-              .collection('TPbooking')
-              .doc(booking.id)
-              .update({'status': 'completed'});
-
-          // Send notification for "completed" status
-          await FirebaseFirestore.instance.collection('notifications').add({
-            'date': date,
-            'bstatus': 'completed',
-            'venueName': venueName,
-            'venueType': venueType,
-            'userId': widget.tpNumber,
-            'bookedtime': DateTime.now(),
-            'message':
-                'Your booking for "$venueName" on $date from $startTime to $endTime is currently completed.',
-            'nstatus': 'new',
-            'startTime': startTime,
-            'endTime': endTime,
-          });
-        }
-      } else if (status == 'ongoing' && now.isAfter(endDateTime)) {
-        // Update status to "completed" if the current time is after endTime
-        await FirebaseFirestore.instance
-            .collection('TPbooking')
-            .doc(booking.id)
-            .update({'status': 'completed'});
-
-        // Send notification for "completed" status
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'date': date,
-          'bstatus': 'completed',
-          'venueName': venueName,
-          'venueType': venueType,
-          'userId': widget.tpNumber,
-          'bookedtime': DateTime.now(),
-          'message':
-              'Your booking for "$venueName" on $date from $startTime to $endTime is currently completed.',
-          'nstatus': 'new',
-          'startTime': startTime,
-          'endTime': endTime,
-        });
-      }
-    }
-  });
+            ),
+          );
+        },
+      );
+    },
+  );
 }
 
   Widget _buildNavItem(String iconPath, String label, VoidCallback onTap) {
