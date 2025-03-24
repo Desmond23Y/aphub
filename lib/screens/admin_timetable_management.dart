@@ -1,7 +1,7 @@
-import 'package:aphub/utils/app_colors.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:aphub/utils/app_colors.dart';
+import 'package:aphub/models/admin_timetable_management.dart';
 
 class TimeSlotManagement extends StatefulWidget {
   const TimeSlotManagement({super.key});
@@ -11,8 +11,7 @@ class TimeSlotManagement extends StatefulWidget {
 }
 
 class TimeSlotManagementState extends State<TimeSlotManagement> {
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
-  late CollectionReference timeslotsRef;
+  final TimeSlotManagementModel model = TimeSlotManagementModel();
   DateTime? selectedWeek;
 
   String? selectedVenueType;
@@ -20,54 +19,25 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
   String? selectedTime;
 
   List<Map<String, dynamic>> venues = [];
-  List<String> timeSlots = [
-    "08:30",
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "12:00",
-    "12:30",
-    "13:00",
-    "13:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-    "17:00"
-  ];
-
-  List<String> venueTypeOptions = [
-    "All",
-    "Auditorium",
-    "Classroom",
-    "Lab",
-    "Meeting Room"
-  ];
-
   bool isGenerating = false;
-  String searchQuery = ""; // For search functionality
+  String searchQuery = "";
 
   @override
   void initState() {
     super.initState();
-    timeslotsRef = firestore.collection("timeslots");
-    fetchVenues().then((fetchedVenues) {
-      setState(() {
-        venues = fetchedVenues;
-      });
+    fetchVenues();
+  }
+
+  Future<void> fetchVenues() async {
+    List<Map<String, dynamic>> fetchedVenues = await model.fetchVenues();
+    setState(() {
+      venues = fetchedVenues;
     });
   }
 
-  Future<List<Map<String, dynamic>>> fetchVenues() async {
-    QuerySnapshot querySnapshot = await firestore.collection("venues").get();
-    return querySnapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
+  DateTime _getStartOfWeek(DateTime date) {
+    int difference = date.weekday - DateTime.monday;
+    return date.subtract(Duration(days: difference));
   }
 
   Future<void> _selectWeek(BuildContext context) async {
@@ -94,40 +64,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       isGenerating = true;
     });
 
-    for (int i = 0; i < 5; i++) {
-      DateTime currentDate = selectedWeek!.add(Duration(days: i));
-      String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
-
-      for (var venue in venues) {
-        String venueName = venue["name"];
-        String venueType = venue["venuetype"];
-        String block = venue["block"];
-        int capacity = venue["capacity"];
-        List<dynamic> equipment = venue["equipment"];
-        String level = venue["level"];
-        String status = venue["status"];
-
-        for (int j = 0; j < timeSlots.length - 1; j++) {
-          String startTime = timeSlots[j];
-          String endTime = timeSlots[j + 1];
-
-          await timeslotsRef.add({
-            "venueName": venueName,
-            "venueType": venueType,
-            "block": block,
-            "capacity": capacity,
-            "equipment": equipment,
-            "level": level,
-            "status": status,
-            "date": formattedDate,
-            "startTime": startTime,
-            "endTime": endTime,
-          });
-
-          if (!mounted) return;
-        }
-      }
-    }
+    await model.generateTimeslotsForAllVenues(selectedWeek!, venues);
 
     if (!mounted) return;
 
@@ -135,7 +72,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       isGenerating = false;
     });
 
-    // Show notification only if widget is still mounted
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -185,7 +121,7 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                     ),
                   )
                 : StreamBuilder<QuerySnapshot>(
-                    stream: timeslotsRef.orderBy("date").snapshots(),
+                    stream: model.timeslotsRef.orderBy("date").snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -198,7 +134,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                         );
                       }
 
-                      // Filter results based on selected filters and search query
                       List<Map<String, dynamic>> filteredSlots = snapshot
                           .data!.docs
                           .map((doc) => doc.data() as Map<String, dynamic>)
@@ -225,7 +160,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                         );
                       }
 
-                      // Group time slots by date and venue
                       Map<String, Map<String, List<Map<String, dynamic>>>>
                           groupedSlots = {};
                       for (var slot in filteredSlots) {
@@ -265,7 +199,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
                                 List<Map<String, dynamic>> slots =
                                     venueEntry.value;
 
-                                // Sort time slots by startTime
                                 slots.sort((a, b) =>
                                     a["startTime"].compareTo(b["startTime"]));
 
@@ -406,8 +339,8 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildDropdown("Type", venueTypeOptions, selectedVenueType,
-                  (value) {
+              _buildDropdown("Type", TimeSlotManagementModel.venueTypeOptions,
+                  selectedVenueType, (value) {
                 setState(() {
                   selectedVenueType = value;
                 });
@@ -415,7 +348,9 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
               const SizedBox(height: 10),
               _buildDateDropdown(),
               const SizedBox(height: 10),
-              _buildDropdown("Time", timeSlots, selectedTime, (value) {
+              _buildDropdown(
+                  "Time", TimeSlotManagementModel.timeSlots, selectedTime,
+                  (value) {
                 setState(() {
                   selectedTime = value;
                 });
@@ -436,7 +371,6 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
     );
   }
 
-  /// Dropdown widget builder
   Widget _buildDropdown(String label, List<String> items, String? selectedValue,
       Function(String?) onChanged) {
     return DropdownButton<String>(
@@ -454,10 +388,9 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
     );
   }
 
-  /// Dropdown for selecting a date
   Widget _buildDateDropdown() {
     return StreamBuilder<QuerySnapshot>(
-      stream: timeslotsRef.orderBy("date").snapshots(),
+      stream: model.timeslotsRef.orderBy("date").snapshots(),
       builder: (context, snapshot) {
         List<String> dates = snapshot.hasData
             ? snapshot.data!.docs
@@ -476,9 +409,4 @@ class TimeSlotManagementState extends State<TimeSlotManagement> {
       },
     );
   }
-}
-
-DateTime _getStartOfWeek(DateTime date) {
-  int difference = date.weekday - DateTime.monday; // Get difference from Monday
-  return date.subtract(Duration(days: difference));
 }

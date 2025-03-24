@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:aphub/screens/admin_create_account.dart';
 import 'package:aphub/screens/admin_update_account.dart';
 import 'package:aphub/utils/app_colors.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:aphub/models/admin_account_management.dart';
 
 class AccountManagement extends StatefulWidget {
   const AccountManagement({super.key});
@@ -12,9 +13,7 @@ class AccountManagement extends StatefulWidget {
 }
 
 class AccountManagementState extends State<AccountManagement> {
-  final CollectionReference _usersRef =
-      FirebaseFirestore.instance.collection("users");
-
+  final AdminAccountManagement _accountManagement = AdminAccountManagement();
   String _searchQuery = "";
   String _selectedRole = "All";
 
@@ -91,7 +90,7 @@ class AccountManagementState extends State<AccountManagement> {
           // Account List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _usersRef.snapshots(),
+              stream: _accountManagement.getUsers(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -106,27 +105,8 @@ class AccountManagementState extends State<AccountManagement> {
                 List<QueryDocumentSnapshot> users = snapshot.data!.docs;
 
                 // Apply search filter and role filter
-                users = users.where((user) {
-                  Map<String, dynamic> userData =
-                      user.data() as Map<String, dynamic>;
-
-                  String name = (userData['name'] ?? '')
-                      .toLowerCase(); // Access name at top-level
-                  String role = (userData['role'] ?? '')
-                      .toLowerCase(); // Try accessing role at top-level first
-
-                  // If role is inside "modules", fetch from there
-                  if (role.isEmpty && userData.containsKey('modules')) {
-                    role = (userData['modules']['role'] ?? '').toLowerCase();
-                  }
-
-                  bool matchesSearch =
-                      _searchQuery.isEmpty || name.contains(_searchQuery);
-                  bool matchesRole = _selectedRole == "All" ||
-                      role == _selectedRole.toLowerCase();
-
-                  return matchesSearch && matchesRole;
-                }).toList();
+                users = _accountManagement.filterUsers(
+                    users, _searchQuery, _selectedRole);
 
                 return ListView.builder(
                   itemCount: users.length,
@@ -241,7 +221,7 @@ class AccountManagementState extends State<AccountManagement> {
             ),
             TextButton(
               onPressed: () {
-                _usersRef.doc(userId).delete();
+                _accountManagement.deleteAccount(userId);
                 Navigator.of(context).pop(); // Close the dialog after deletion
               },
               child: const Text("Delete", style: TextStyle(color: Colors.red)),

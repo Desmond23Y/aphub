@@ -1,8 +1,9 @@
-import 'package:aphub/screens/admin_create_module.dart';
-import 'package:aphub/screens/admin_update_module.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:aphub/utils/app_colors.dart';
+import 'package:aphub/screens/admin_create_module.dart';
+import 'package:aphub/screens/admin_update_module.dart';
+import 'package:aphub/models/admin_module_management.dart';
 
 class ModuleManagement extends StatefulWidget {
   const ModuleManagement({super.key});
@@ -12,11 +13,7 @@ class ModuleManagement extends StatefulWidget {
 }
 
 class ModuleManagementState extends State<ModuleManagement> {
-  final CollectionReference _modulesRef =
-      FirebaseFirestore.instance.collection("modules");
-  final CollectionReference _usersRef =
-      FirebaseFirestore.instance.collection("users");
-
+  final AdminModuleManagementModel _model = AdminModuleManagementModel();
   String _searchQuery = "";
 
   @override
@@ -61,7 +58,7 @@ class ModuleManagementState extends State<ModuleManagement> {
           // Module List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _modulesRef.snapshots(),
+              stream: _model.getModulesStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -168,15 +165,7 @@ class ModuleManagementState extends State<ModuleManagement> {
     Map<String, dynamic>? data = module.data() as Map<String, dynamic>?;
 
     String lecturerId = data?["lecturerId"] ?? "";
-    String lecturerName = data?["lecturerName"] ?? "Unassigned";
-
-    if (lecturerId.isNotEmpty) {
-      DocumentSnapshot lecturerSnapshot = await _usersRef.doc(lecturerId).get();
-      Map<String, dynamic>? lecturerData =
-          lecturerSnapshot.data() as Map<String, dynamic>?;
-
-      lecturerName = lecturerData?["name"] ?? "Unassigned";
-    }
+    String lecturerName = await _model.getLecturerName(lecturerId);
 
     if (mounted) {
       Navigator.push(
@@ -212,7 +201,7 @@ class ModuleManagementState extends State<ModuleManagement> {
             ),
             TextButton(
               onPressed: () {
-                _modulesRef.doc(moduleId).delete();
+                _model.deleteModule(moduleId);
                 Navigator.of(context).pop();
               },
               child: const Text("Delete", style: TextStyle(color: Colors.red)),
