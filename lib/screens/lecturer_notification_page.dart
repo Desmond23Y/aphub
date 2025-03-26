@@ -1,23 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/lecturer_notifications_model.dart';
 
 class LecturerNotificationPage extends StatelessWidget {
   final String tpNumber;
   const LecturerNotificationPage({super.key, required this.tpNumber});
 
+  Future<void> _markAllAsRead() async {
+    final notifications = await FirebaseFirestore.instance
+        .collection("notifications")
+        .where("userId", isEqualTo: tpNumber)
+        .where("nstatus", isEqualTo: "new")
+        .get();
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in notifications.docs) {
+      batch.update(doc.reference, {"nstatus": "read"});
+    }
+    await batch.commit();
+  }
+
+  Future<void> _markAsRead(String notificationId) async {
+    await FirebaseFirestore.instance
+        .collection("notifications")
+        .doc(notificationId)
+        .update({"nstatus": "read"});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark theme
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text('Lecturer Notifications'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
           TextButton(
-            onPressed: () => _markAllAsRead(),
-            child: const Text("Mark All as Read",
-                style: TextStyle(color: Colors.pink)),
+            onPressed: _markAllAsRead,
+            child: const Text(
+              "Mark All as Read",
+              style: TextStyle(color: Colors.pink),
+            ),
           ),
         ],
       ),
@@ -30,48 +54,29 @@ class LecturerNotificationPage extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: CircularProgressIndicator(color: Colors.pink));
+              child: CircularProgressIndicator(color: Colors.pink),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
-              child: Text("No notifications",
-                  style: TextStyle(color: Colors.white70)),
+              child: Text(
+                "No notifications",
+                style: TextStyle(color: Colors.white70),
+              ),
             );
           }
 
-          var notifications = snapshot.data!.docs;
+          final notifications = snapshot.data!.docs
+              .map((doc) => LecturerNotification.fromFirestore(doc))
+              .toList();
 
           return ListView.builder(
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-              var notif = notifications[index].data() as Map<String, dynamic>;
-
-              return Card(
-                color: Colors.grey[850], // Dark mode card
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: Text(
-                    notif["message"] ?? "No message",
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  subtitle: Text(
-                    "${notif["date"]} | ${notif["startTime"]} - ${notif["endTime"]}",
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  trailing: notif["nstatus"] == "new"
-                      ? const Icon(Icons.notifications_active,
-                          color: Colors.pink)
-                      : null,
-                  onTap: () {
-                    // Mark individual notification as read
-                    FirebaseFirestore.instance
-                        .collection("notifications")
-                        .doc(notifications[index].id)
-                        .update({"nstatus": "read"});
-                  },
-                ),
+              final notification = notifications[index];
+              return _NotificationCard(
+                notification: notification,
+                onTap: () => _markAsRead(notification.id),
               );
             },
           );
@@ -79,16 +84,37 @@ class LecturerNotificationPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _markAllAsRead() async {
-    var notifications = await FirebaseFirestore.instance
-        .collection("notifications")
-        .where("userId", isEqualTo: tpNumber)
-        .where("nstatus", isEqualTo: "new")
-        .get();
+class _NotificationCard extends StatelessWidget {
+  final LecturerNotification notification;
+  final VoidCallback onTap;
 
-    for (var doc in notifications.docs) {
-      await doc.reference.update({"nstatus": "read"});
-    }
+  const _NotificationCard({
+    required this.notification,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.grey[850],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.all(8.0),
+      child: ListTile(
+        title: Text(
+          notification.message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        subtitle: Text(
+          "${notification.date} | ${notification.startTime} - ${notification.endTime}",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        trailing: notification.nstatus == "new"
+            ? const Icon(Icons.notifications_active, color: Colors.pink)
+            : null,
+        onTap: onTap,
+      ),
+    );
   }
 }
