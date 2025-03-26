@@ -32,7 +32,7 @@ class LecturerNotificationPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Lecturer Notifications'),
+        title: const Text('Lecturer Notifications', style: TextStyle(fontSize: 18),),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [

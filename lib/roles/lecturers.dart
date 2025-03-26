@@ -133,7 +133,7 @@ class LecturerPageState extends State<LecturerPage> {
 
               return Stack(
                 children: [
-                  IconButton(
+                  IconButton( //Notification
                     icon:
                         const Icon(Icons.notifications, color: AppColors.white),
                     onPressed: () {
@@ -462,6 +462,7 @@ class LecturerPageState extends State<LecturerPage> {
     }
   }
 
+  // Bottom nav
   Widget _buildNavItem(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,

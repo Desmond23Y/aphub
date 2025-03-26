@@ -21,49 +21,77 @@ class _LecturerBookingPageState extends State<LecturerBookingPage> {
   String? _selectedDate;
 
   Future<String?> _showPurposeDialog(List<String> modules) async {
-    String? selectedPurpose;
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Select Purpose"),
-        content: StatefulBuilder(
-          builder: (context, setState) => DropdownButton<String>(
-            value: selectedPurpose,
-            isExpanded: true,
-            hint: const Text("Choose a purpose"),
-            items: [
-              ...modules.map((module) => DropdownMenuItem(
-                    value: module,
-                    child: Text(module),
-                  )),
-              const DropdownMenuItem(
-                value: "Event",
-                child: Text("Event"),
+  String? selectedPurpose;
+  final eventController = TextEditingController();
+
+  return showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Select Purpose"),
+      content: StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButton<String>(
+              value: selectedPurpose,
+              isExpanded: true,
+              hint: const Text("Choose a purpose"),
+              items: [
+                ...modules.map((module) => DropdownMenuItem(
+                      value: module,
+                      child: Text(module),
+                    )),
+                const DropdownMenuItem(
+                  value: "Event",
+                  child: Text("Event"),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() => selectedPurpose = value);
+              },
+            ),
+            if (selectedPurpose == "Event") // Show TextField only for Event
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: TextField(
+                  controller: eventController,
+                  decoration: const InputDecoration(
+                    hintText: "Enter event details",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
               ),
-            ],
-            onChanged: (value) => setState(() => selectedPurpose = value),
-          ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, selectedPurpose),
-            child: const Text("Continue"),
-          ),
-        ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () {
+            if (selectedPurpose == "Event" && eventController.text.isEmpty) {
+              return; // Prevent submission without details
+            }
+            Navigator.pop(context, selectedPurpose == "Event"
+                ? "Event: ${eventController.text}"
+                : selectedPurpose);
+          },
+          child: const Text("Continue"),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Future<String> _showEventDetailDialog() async {
     final eventController = TextEditingController();
     return await showDialog<String>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Enter Event Details"),
+            title: const Text("Enter Event"),
             content: TextField(
               controller: eventController,
               decoration: const InputDecoration(hintText: "Event details"),
@@ -199,7 +227,7 @@ class _LecturerBookingPageState extends State<LecturerBookingPage> {
                         ),
                         trailing: ElevatedButton(
                           onPressed: () => _bookTimeslot(slot),
-                          child: const Text("Book"),
+                          child: const Text("Book", style: TextStyle(color: Colors.deepPurpleAccent),),
                         ),
                       ),
                     );
