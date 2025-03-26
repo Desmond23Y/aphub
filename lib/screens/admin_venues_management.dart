@@ -1,8 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:aphub/models/admin_venue_management.dart';
 import 'package:aphub/screens/admin_create_venues.dart';
 import 'package:aphub/screens/admin_update_venues.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:aphub/utils/app_colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class VenuesManagement extends StatefulWidget {
   const VenuesManagement({super.key});
@@ -12,9 +13,7 @@ class VenuesManagement extends StatefulWidget {
 }
 
 class VenuesManagementState extends State<VenuesManagement> {
-  final CollectionReference _venuesRef =
-      FirebaseFirestore.instance.collection("venues");
-
+  final VenuesManagementModel _model = VenuesManagementModel();
   String _searchQuery = "";
   String _selectedVenueType = "All";
 
@@ -85,13 +84,11 @@ class VenuesManagementState extends State<VenuesManagement> {
               },
             ),
           ),
-
           const SizedBox(height: 1),
-
           // Venue List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _venuesRef.snapshots(),
+              stream: _model.getVenuesStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -103,20 +100,8 @@ class VenuesManagementState extends State<VenuesManagement> {
                           style: TextStyle(color: Colors.white)));
                 }
 
-                List<QueryDocumentSnapshot> venues = snapshot.data!.docs;
-
-                // Apply search and filter
-                venues = venues.where((venue) {
-                  Map<String, dynamic> venueData =
-                      venue.data() as Map<String, dynamic>;
-                  String name = (venueData['name'] ?? '').toLowerCase();
-                  String venueType = (venueData['venuetype'] ?? 'N/A');
-                  bool matchesSearch =
-                      _searchQuery.isEmpty || name.contains(_searchQuery);
-                  bool matchesFilter = _selectedVenueType == "All" ||
-                      venueType == _selectedVenueType;
-                  return matchesSearch && matchesFilter;
-                }).toList();
+                List<QueryDocumentSnapshot> venues = _model.filterVenues(
+                    snapshot.data!.docs, _searchQuery, _selectedVenueType);
 
                 return ListView.builder(
                   itemCount: venues.length,
@@ -126,60 +111,65 @@ class VenuesManagementState extends State<VenuesManagement> {
                     Map<String, dynamic> venueData =
                         venue.data() as Map<String, dynamic>;
 
-                    return Card(
-                      color: AppColors.darkdarkgrey, // Dark card background
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                    return Container(
                       margin: const EdgeInsets.symmetric(
                           vertical: 8, horizontal: 10),
-                      child: ListTile(
-                        title: Text(
-                          venueData['name'] ?? 'Unnamed Venue',
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.bold),
+                      child: Card(
+                        color: AppColors.darkdarkgrey,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Capacity: ${venueData['capacity']}",
-                                style: const TextStyle(
-                                    color: AppColors.lightgrey)),
-                            Text(
-                                "Equipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}",
-                                style: const TextStyle(
-                                    color: AppColors.lightgrey)),
-                            Text(
-                                "Venue Type: ${venueData['venuetype'] ?? 'N/A'}",
-                                style: const TextStyle(
-                                    color: AppColors.lightgrey)),
-                            Text(
-                              "Status: ${venueData['status'] ?? 'N/A'}",
-                              style: TextStyle(
-                                color: venueData['status'] == 'available'
-                                    ? Colors.green
-                                    : Colors.red,
-                                fontWeight: FontWeight.bold,
+                        child: ListTile(
+                          title: Text(
+                            venueData['name'] ?? 'Unnamed Venue',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Capacity: ${venueData['capacity']}",
+                                  style: const TextStyle(
+                                      color: AppColors.lightgrey)),
+                              Text(
+                                  "Equipment: ${(venueData['equipment'] as List<dynamic>?)?.join(', ') ?? 'No Equipment'}",
+                                  style: const TextStyle(
+                                      color: AppColors.lightgrey)),
+                              Text(
+                                  "Venue Type: ${venueData['venuetype'] ?? 'N/A'}",
+                                  style: const TextStyle(
+                                      color: AppColors.lightgrey)),
+                              Text(
+                                "Status: ${venueData['status'] ?? 'N/A'}",
+                                style: TextStyle(
+                                  color: venueData['status'] == 'available'
+                                      ? Colors.green
+                                      : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                _editVenue(venueId, venueData);
-                              },
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                _deleteVenue(venueId);
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  _editVenue(venueId, venueData);
+                                },
+                              ),
+                              IconButton(
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  _deleteVenue(venueId);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -190,8 +180,6 @@ class VenuesManagementState extends State<VenuesManagement> {
           ),
         ],
       ),
-
-      // Floating Action Button for adding venues
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue,
         onPressed: _createVenue,
@@ -212,7 +200,7 @@ class VenuesManagementState extends State<VenuesManagement> {
   }
 
   void _deleteVenue(String venueId) {
-    _venuesRef.doc(venueId).delete();
+    _model.deleteVenue(venueId);
   }
 
   void _createVenue() {
