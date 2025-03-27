@@ -28,6 +28,7 @@ class StudentBookingModel2 {
 
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -70,6 +71,7 @@ class StudentBookingModel2 {
         if (timeslotData['venueType'] == "Auditorium") {
           // Navigate to StudentFormPage
           Navigator.push(
+            // ignore: use_build_context_synchronously
             context,
             MaterialPageRoute(
               builder: (context) => StudentFormPage(
