@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Booking {
-  final String id;
   final String userId;
   final String name;
   final String venueName;
@@ -9,12 +8,12 @@ class Booking {
   final String date;
   final String startTime;
   final String endTime;
-  final String status; // "scheduled", "cancelled", "completed"
-  final DateTime bookedTime;
-  final String detail; // Purpose (module/event)
+  final String status;
+  final Timestamp bookedTime;
+  final String detail;
+  final String moduleName;  // New field
 
   Booking({
-    required this.id,
     required this.userId,
     required this.name,
     required this.venueName,
@@ -25,35 +24,22 @@ class Booking {
     required this.status,
     required this.bookedTime,
     required this.detail,
+    required this.moduleName,
   });
 
-  factory Booking.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Booking(
-      id: doc.id,
-      userId: data['userId'] ?? '',
-      name: data['name'] ?? '',
-      venueName: data['venueName'] ?? '',
-      venueType: data['venueType'] ?? '',
-      date: data['date'] ?? '',
-      startTime: data['startTime'] ?? '',
-      endTime: data['endTime'] ?? '',
-      status: data['status'] ?? 'scheduled',
-      bookedTime: (data['bookedtime'] as Timestamp).toDate(),
-      detail: data['detail'] ?? '',
-    );
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'name': name,
+      'venueName': venueName,
+      'venueType': venueType,
+      'date': date,
+      'startTime': startTime,
+      'endTime': endTime,
+      'status': status,
+      'bookedtime': bookedTime,
+      'detail': detail,
+      'moduleName': moduleName,  // Store in Firestore
+    };
   }
-
-  Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'name': name,
-        'venueName': venueName,
-        'venueType': venueType,
-        'date': date,
-        'startTime': startTime,
-        'endTime': endTime,
-        'status': status,
-        'bookedtime': Timestamp.fromDate(bookedTime),
-        'detail': detail,
-      };
 }
