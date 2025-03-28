@@ -30,7 +30,7 @@ class AdminBookingManagementModel {
         .where("status", isEqualTo: "pending");
   }
 
-  // Approve a request
+// Approve a request
   Future<void> approveRequest(String docId) async {
     try {
       DocumentSnapshot tpFormDoc = await tpFormRef.doc(docId).get();
@@ -39,6 +39,41 @@ class AdminBookingManagementModel {
       String tpBookingId = tpFormDoc["TPbookingId"];
       await tpFormRef.doc(docId).update({"status": "scheduled"});
       await tpBookingsRef.doc(tpBookingId).update({"status": "scheduled"});
+
+      await _sendApprovalNotification(
+        userId: tpFormDoc["userId"],
+        venueName: tpFormDoc["venueName"],
+        date: tpFormDoc["date"],
+        startTime: tpFormDoc["startTime"],
+        endTime: tpFormDoc["endTime"],
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Send approval notification to user
+  Future<void> _sendApprovalNotification({
+    required String userId,
+    required String venueName,
+    required String date,
+    required String startTime,
+    required String endTime,
+  }) async {
+    try {
+      await firestore.collection("notifications").add({
+        "userId": userId,
+        "venueName": venueName,
+        "date": date,
+        "startTime": startTime,
+        "endTime": endTime,
+        "message":
+            "Your booking for \"$venueName\" on $date from $startTime to $endTime has been scheduled.",
+        "nstatus": "new",
+        "bookedtime": DateTime.now(),
+        "bstatus": "scheduled",
+        "venueType": "Auditorium",
+      });
     } catch (e) {
       rethrow;
     }
@@ -70,7 +105,7 @@ class AdminBookingManagementModel {
     }
   }
 
-  // Send notification to user
+  // Send reject notification to user
   Future<void> _sendNotification({
     required String userId,
     required String venueName,
@@ -88,7 +123,7 @@ class AdminBookingManagementModel {
         "endTime": endTime,
         "message":
             "Your booking for \"$venueName\" on $date from $startTime to $endTime has been cancelled. Reason: $reason",
-        "nstatus": "unread",
+        "nstatus": "new",
         "bookedtime": DateTime.now(),
         "bstatus": "cancelled",
         "venueType": "Auditorium",
