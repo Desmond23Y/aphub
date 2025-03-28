@@ -308,67 +308,83 @@ class StudentPageState extends State<StudentPage> {
     );
   }
 
-  Widget _buildFacilityInfo() {
-    final facilities = [
-      {
-        'name': 'Auditorium',
-        'image': 'assets/icons/MAE_FACILITY_AUDI.png',
-        'capacity': 'Capacity: 250',
-        'equipment': ['Projector', 'Speaker', 'Mic'],
-      },
-      {
-        'name': 'Classroom',
-        'image': 'assets/icons/MAE_FACILITY_CLASSROOM.jpg',
-        'capacity': 'Capacity: 35',
-        'equipment': ['Projector', 'Whiteboard'],
-      },
-      {
-        'name': 'Meeting Room',
-        'image': 'assets/icons/MAE_FACILITY_MEETING.jpg',
-        'capacity': 'Capacity: 6',
-        'equipment': ['Projector', 'Whiteboard'],
-      },
-      {
-        'name': 'Tech Lab',
-        'image': 'assets/icons/MAE_FACILITY_TECHLAB.png',
-        'capacity': 'Capacity: 25',
-        'equipment': ['Computers', 'Projector', 'Whiteboard'],
-      },
-    ];
+Widget _buildFacilityInfo() {
+  final facilities = [
+    {
+      'name': 'Auditorium',
+      'type': 'Auditorium',  // Add this field to match your filter options
+      'image': 'assets/icons/MAE_FACILITY_AUDI.png',
+      'capacity': 'Capacity: 250',
+      'equipment': ['Projector', 'Speaker', 'Mic'],
+    },
+    {
+      'name': 'Classroom',
+      'type': 'Classroom',
+      'image': 'assets/icons/MAE_FACILITY_CLASSROOM.jpg',
+      'capacity': 'Capacity: 35',
+      'equipment': ['Projector', 'Whiteboard'],
+    },
+    {
+      'name': 'Meeting Room',
+      'type': 'Meeting room',  // Note: Match exactly with your filter options
+      'image': 'assets/icons/MAE_FACILITY_MEETING.jpg',
+      'capacity': 'Capacity: 6',
+      'equipment': ['Projector', 'Whiteboard'],
+    },
+    {
+      'name': 'Tech Lab',
+      'type': 'Lab',
+      'image': 'assets/icons/MAE_FACILITY_TECHLAB.png',
+      'capacity': 'Capacity: 25',
+      'equipment': ['Computers', 'Projector', 'Whiteboard'],
+    },
+  ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Text(
-            'Facilities information',
-            style: TextStyle(
-              color: AppColors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Text(
+          'Facilities information',
+          style: TextStyle(
+            color: AppColors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        SizedBox(
-          height: 300,
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              if (notification is ScrollStartNotification || 
-                  notification is ScrollUpdateNotification) {
-                _handleUserInteraction();
-              }
-              return false;
-            },
-            child: ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: facilities.length,
-              itemBuilder: (context, index) {
-                final facility = facilities[index];
-                return Container(
+      ),
+      SizedBox(
+        height: 300,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification is ScrollStartNotification || 
+                notification is ScrollUpdateNotification) {
+              _handleUserInteraction();
+            }
+            return false;
+          },
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: facilities.length,
+            itemBuilder: (context, index) {
+              final facility = facilities[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentBookingPage(
+                        tpNumber: widget.tpNumber,
+                        initialFacilityFilter: facility['type'] as String,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
                   width: 240,
                   margin: const EdgeInsets.only(right: 16),
                   decoration: BoxDecoration(
@@ -434,14 +450,15 @@ class StudentPageState extends State<StudentPage> {
                       ),
                     ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _buildScheduleTab({required bool isToday}) {
     final today = DateTime.now().toLocal();

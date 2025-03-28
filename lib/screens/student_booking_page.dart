@@ -14,18 +14,21 @@ import 'package:aphub/models/student_updateschedule_model.dart';
 
 class StudentBookingPage extends StatefulWidget {
   final String tpNumber;
-  
+  final String? initialFacilityFilter;  // Add this parameter
 
-  StudentBookingPage({super.key, required this.tpNumber});
+  const StudentBookingPage({
+    Key? key,
+    required this.tpNumber,
+    this.initialFacilityFilter,  // Make it optional
+  }) : super(key: key);
 
   @override
   StudentBookingPageState createState() => StudentBookingPageState();
-  
 }
 
 class StudentBookingPageState extends State<StudentBookingPage> {
   late StudentUpdateScheduleModel _scheduleModel;
-  String selectedFacility = 'All';
+  String selectedFacility = 'All';  // Will be initialized in initState
   String selectedBlock = 'All';
   String selectedFloor = 'All';
   String selectedStatus = 'All';
@@ -34,8 +37,11 @@ class StudentBookingPageState extends State<StudentBookingPage> {
   @override
   void initState() {
     super.initState();
-    _scheduleModel = StudentUpdateScheduleModel(tpNumber: widget.tpNumber); // ✅ Correct placement
-    _scheduleModel.startCheckingBookingStatus(); // ✅ No error now
+    // Initialize with the passed filter or default to 'All'
+    selectedFacility = widget.initialFacilityFilter ?? 'All';
+    
+    _scheduleModel = StudentUpdateScheduleModel(tpNumber: widget.tpNumber);
+    _scheduleModel.startCheckingBookingStatus();
   }
 
   Future<void> _logout() async {
@@ -403,7 +409,7 @@ Widget _buildBooking() {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Add Calendar Button and Reset Button next to "Available Facilities"
+          // Filter Header with Calendar and Reset
           Row(
             children: [
               const Text(
@@ -411,38 +417,34 @@ Widget _buildBooking() {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.white),
+                  color: AppColors.white,
+                ),
               ),
-              const SizedBox(width: 10), // Add spacing between text and button
+              const SizedBox(width: 10),
               IconButton(
                 icon: Image.asset(
-                  'assets/icons/MAE_Calender_icon.png', // Path to your calendar icon
+                  'assets/icons/MAE_Calender_icon.png',
                   width: 24,
                   height: 24,
                 ),
                 onPressed: () async {
-                  // Show date picker dialog
                   final DateTime? pickedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
                     firstDate: DateTime.now(),
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
-
                   if (pickedDate != null) {
                     setState(() {
-                      // Format the selected date as a string (e.g., "2023-10-15")
                       selectedDate = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
                     });
                   }
                 },
               ),
-              // Reset Button
               IconButton(
                 icon: const Icon(Icons.refresh, color: AppColors.white),
                 onPressed: () {
                   setState(() {
-                    // Reset all filters
                     selectedDate = 'All';
                     selectedFacility = 'All';
                     selectedBlock = 'All';
@@ -452,7 +454,8 @@ Widget _buildBooking() {
               ),
             ],
           ),
-          // Display Selected Date
+          
+          // Selected Date Display
           if (selectedDate != 'All')
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
@@ -466,7 +469,7 @@ Widget _buildBooking() {
             ),
           const SizedBox(height: 10),
 
-          // Add Filter Dropdowns
+          // Filter Dropdowns
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -528,7 +531,7 @@ Widget _buildBooking() {
           ),
           const SizedBox(height: 10),
 
-          // StreamBuilder for Timeslots
+          // Timeslots List
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('timeslots')
@@ -547,9 +550,9 @@ Widget _buildBooking() {
                 return _buildNoDataMessage('No available facilities');
               }
 
-              // Filter timeslots based on selected filters
+              // Apply filters
               final timeslots = snapshot.data!.docs.where((timeslot) {
-                final venueType = timeslot['venueType'];
+                final venueType = timeslot['venueType'] ?? 'Classroom';
                 final block = timeslot['block'];
                 final level = timeslot['level'];
                 final date = timeslot['date'];
@@ -570,10 +573,7 @@ Widget _buildBooking() {
               final Map<String, List<QueryDocumentSnapshot>> groupedByVenue = {};
               for (final timeslot in timeslots) {
                 final venueName = timeslot['venueName'];
-                if (!groupedByVenue.containsKey(venueName)) {
-                  groupedByVenue[venueName] = [];
-                }
-                groupedByVenue[venueName]!.add(timeslot);
+                groupedByVenue.putIfAbsent(venueName, () => []).add(timeslot);
               }
 
               return ListView.builder(
@@ -583,6 +583,7 @@ Widget _buildBooking() {
                 itemBuilder: (context, index) {
                   final venueName = groupedByVenue.keys.elementAt(index);
                   final venueTimeslots = groupedByVenue[venueName]!;
+                  final venueType = venueTimeslots.first['venueType'] ?? 'Classroom';
 
                   return FutureBuilder<DocumentSnapshot>(
                     future: FirebaseFirestore.instance.collection('venues').doc(venueName).get(),
@@ -594,15 +595,13 @@ Widget _buildBooking() {
                       final venueData = venueSnapshot.data!;
                       final capacity = venueData['capacity'];
                       final equipment = venueData['equipment'];
+                      final imagePath = _getVenueImagePath(venueType);
 
                       // Group timeslots by date
                       final Map<String, List<QueryDocumentSnapshot>> groupedByDate = {};
                       for (final timeslot in venueTimeslots) {
                         final date = timeslot['date'];
-                        if (!groupedByDate.containsKey(date)) {
-                          groupedByDate[date] = [];
-                        }
-                        groupedByDate[date]!.add(timeslot);
+                        groupedByDate.putIfAbsent(date, () => []).add(timeslot);
                       }
 
                       return Column(
@@ -612,87 +611,135 @@ Widget _buildBooking() {
                           final timeslotsForDate = entry.value;
 
                           return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8), // Add margin
+                            margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8), // Rounded corners
+                              borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.darkgrey.withOpacity(0.5), // Shadow color with dynamic opacity
-                                  blurRadius: 6, // Blur radius
-                                  spreadRadius: 0.5, // Spread radius
-                                  offset: const Offset(0, 4), // Shadow offset
+                                  color: AppColors.darkgrey.withOpacity(0.5),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.black.withOpacity(0.7), // Black background with 70% opacity
-                                borderRadius: BorderRadius.circular(8), // Match the outer container's border radius
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Venue Information for each date
-                                  ListTile(
-                                    title: Text(
-                                      venueName,
-                                      style: const TextStyle(color: AppColors.white),
-                                    ),
-                                    subtitle: Text(
-                                      'Available Timeslots: ${timeslotsForDate.length}',
-                                      style: const TextStyle(color: AppColors.white),
-                                    ),
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.info, color: AppColors.white),
-                                      onPressed: () {
-                                        _showVenueInfoDialog(context, venueName, capacity, equipment);
-                                      },
+                            child: Column(
+                              children: [
+                                // Large Image at the top
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12),
+                                  ),
+                                  child: Image.asset(
+                                    imagePath,
+                                    width: double.infinity,
+                                    height: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        height: 150,
+                                        color: AppColors.darkgrey,
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            color: AppColors.white,
+                                            size: 40,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                
+                                // Venue Info Container
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.black.withOpacity(0.7),
+                                    borderRadius: const BorderRadius.vertical(
+                                      bottom: Radius.circular(12),
                                     ),
                                   ),
-
-                                  // Date Header
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                    child: Text(
-                                      'Date: $date',
-                                      style: const TextStyle(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.bold,
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            venueName,
+                                            style: const TextStyle(
+                                              color: AppColors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.info_outline, color: AppColors.white),
+                                            onPressed: () {
+                                              _showVenueInfoDialog(context, venueName, capacity, equipment);
+                                            },
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
+                                      
+                                      const SizedBox(height: 8),
+                                      
+                                      Text(
+                                        'Date: $date',
+                                        style: const TextStyle(
+                                          color: AppColors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 12),
+                                      
+                                      Text(
+                                        'Available Timeslots (${timeslotsForDate.length})',
+                                        style: const TextStyle(
+                                          color: AppColors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      
+                                      const SizedBox(height: 12),
+                                      
+                                      // Timeslots Grid
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: timeslotsForDate.map((timeslot) {
+                                          final startTime = timeslot['startTime'];
+                                          final endTime = timeslot['endTime'];
+                                          final timeRange = '$startTime - $endTime';
 
-                                  // Timeslots for the date
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8),
-                                    child: Wrap(
-                                      spacing: 8.0,
-                                      runSpacing: 8.0,
-                                      children: timeslotsForDate.map((timeslot) {
-                                        final startTime = timeslot['startTime'];
-                                        final endTime = timeslot['endTime'];
-                                        final timeRange = '$startTime - $endTime';
-
-                                        return ElevatedButton(
-                                          onPressed: () {
-                                            _confirmBooking(context, timeslot.reference, timeRange, widget.tpNumber);
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.darkgrey,
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                            minimumSize: const Size(100, 40),
-                                          ),
-                                          child: Text(
-                                            timeRange,
-                                            style: const TextStyle(color: AppColors.white),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
+                                          return ElevatedButton(
+                                            onPressed: () {
+                                              _confirmBooking(context, timeslot.reference, timeRange, widget.tpNumber);
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.darkgrey,
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            child: Text(
+                                              timeRange,
+                                              style: const TextStyle(
+                                                color: AppColors.white,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 16), // Add spacing between dates
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -709,6 +756,23 @@ Widget _buildBooking() {
   );
 }
 
+
+// Helper function to get image path
+String _getVenueImagePath(String venueType) {
+  switch (venueType.toLowerCase()) {
+    case 'auditorium':
+      return 'assets/icons/MAE_FACILITY_AUDI.png';
+    case 'meeting room':
+    case 'meetingroom':
+      return 'assets/icons/MAE_FACILITY_MEETING.jpg';
+    case 'lab':
+    case 'laboratory':
+      return 'assets/icons/MAE_FACILITY_TECHLAB.png';
+    case 'classroom':
+    default:
+      return 'assets/icons/MAE_FACILITY_CLASSROOM.jpg';
+  }
+}
 
 
   Widget _buildNoDataMessage(String message) {
