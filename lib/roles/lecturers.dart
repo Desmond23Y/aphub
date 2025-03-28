@@ -7,6 +7,7 @@ import 'package:aphub/screens/lecturer_booking_page.dart';
 import 'package:aphub/screens/lecturer_faq_page.dart';
 import 'package:aphub/screens/lecturer_history_page.dart';
 import 'package:aphub/screens/lecturer_notification_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LecturerPage extends StatefulWidget {
   final String tpNumber;
@@ -20,6 +21,10 @@ class LecturerPageState extends State<LecturerPage> {
   late String name;
   late String tpNumber;
   Timer? _autoUpdateTimer;
+  final ScrollController _scrollController = ScrollController();
+  Timer? _autoScrollTimer;
+  Timer? _userInteractionTimer;
+  bool _isUserScrolling = false;
 
   @override
   void initState() {
@@ -35,11 +40,60 @@ class LecturerPageState extends State<LecturerPage> {
         timer.cancel(); // Stop timer when widget is removed
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoScroll();
+    });
+  }
+
+  void _startAutoScroll() {
+    const scrollDuration = Duration(seconds: 15);
+    const pauseDuration = Duration(seconds: 2);
+
+    Future<void> scroll(bool toRight) async {
+      if (!_scrollController.hasClients || !mounted || _isUserScrolling) return;
+
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final double target = toRight ? maxScroll : 0.0;
+
+      await _scrollController.animateTo(
+        target,
+        duration: scrollDuration,
+        curve: Curves.linear,
+      );
+
+      await Future.delayed(pauseDuration);
+
+      if (mounted) scroll(!toRight);
+    }
+
+    _autoScrollTimer?.cancel();
+    scroll(true);
+  }
+
+  void _handleUserInteraction() {
+    if (!_isUserScrolling) {
+      setState(() {
+        _isUserScrolling = true;
+      });
+    }
+
+    _userInteractionTimer?.cancel();
+    _userInteractionTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _isUserScrolling = false;
+        });
+        _startAutoScroll();
+      }
+    });
   }
 
   @override
   void dispose() {
     _autoUpdateTimer?.cancel(); // Prevent memory leaks
+    _autoScrollTimer?.cancel();
+    _userInteractionTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -122,8 +176,8 @@ class LecturerPageState extends State<LecturerPage> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('notifications')
-                .where('userId', isEqualTo: tpNumber) // Filter by lecturer ID
-                .where('nstatus', isEqualTo: 'new') // Only unread notifications
+                .where('userId', isEqualTo: tpNumber)
+                .where('nstatus', isEqualTo: 'new')
                 .snapshots(),
             builder: (context, snapshot) {
               int unreadCount = 0;
@@ -133,9 +187,8 @@ class LecturerPageState extends State<LecturerPage> {
 
               return Stack(
                 children: [
-                  IconButton( //Notification
-                    icon:
-                        const Icon(Icons.notifications, color: AppColors.white),
+                  IconButton(
+                    icon: const Icon(Icons.notifications, color: AppColors.white),
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -146,13 +199,10 @@ class LecturerPageState extends State<LecturerPage> {
                       );
                     },
                   ),
-                  if (unreadCount >
-                      0) // Show badge if there are unread notifications
+                  if (unreadCount > 0)
                     Positioned(
-                      right:
-                          -3, // Adjust this value to move the badge more to the left
-                      top:
-                          6, // Adjust this value to move the badge slightly down
+                      right: -3,
+                      top: 6,
                       child: Container(
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
@@ -160,8 +210,7 @@ class LecturerPageState extends State<LecturerPage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         constraints: const BoxConstraints(
-                          minWidth:
-                              18, // Slightly larger for better readability
+                          minWidth: 18,
                           minHeight: 18,
                         ),
                         child: Text(
@@ -181,16 +230,157 @@ class LecturerPageState extends State<LecturerPage> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          _buildProfileSection(),
-          const SizedBox(height: 20),
-          _buildUpcomingBooking(),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            _buildProfileSection(),
+            const SizedBox(height: 20),
+            // Add the new facility slideshow section
+            _buildFacilityInfo(),
+            const SizedBox(height: 20),
+            _buildUpcomingBooking(),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  // Add this new method for the facility slideshow
+  Widget _buildFacilityInfo() {
+    final facilities = [
+      {
+        'name': 'Auditorium',
+        'image': 'assets/icons/MAE_FACILITY_AUDI.png',
+        'capacity': 'Capacity: 250',
+        'equipment': ['Projector', 'Speaker', 'Mic'],
+      },
+      {
+        'name': 'Classroom',
+        'image': 'assets/icons/MAE_FACILITY_CLASSROOM.jpg',
+        'capacity': 'Capacity: 35',
+        'equipment': ['Projector', 'Whiteboard'],
+      },
+      {
+        'name': 'Meeting Room',
+        'image': 'assets/icons/MAE_FACILITY_MEETING.jpg',
+        'capacity': 'Capacity: 6',
+        'equipment': ['Projector', 'Whiteboard'],
+      },
+      {
+        'name': 'Tech Lab',
+        'image': 'assets/icons/MAE_FACILITY_TECHLAB.png',
+        'capacity': 'Capacity: 25',
+        'equipment': ['Computers', 'Projector', 'Whiteboard'],
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Text(
+            'Facilities Information',
+            style: TextStyle(
+              color: AppColors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 300,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification || 
+                  notification is ScrollUpdateNotification) {
+                _handleUserInteraction();
+              }
+              return false;
+            },
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: facilities.length,
+              itemBuilder: (context, index) {
+                final facility = facilities[index];
+                return Container(
+                  width: 240,
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.darkdarkgrey,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12)),
+                        child: Image.asset(
+                          facility['image'] as String,
+                          width: double.infinity,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              facility['name'] as String,
+                              style: const TextStyle(
+                                color: AppColors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              facility['capacity'] as String,
+                              style: const TextStyle(
+                                color: AppColors.lightgrey,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ...(facility['equipment'] as List<String>)
+                                .map((item) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Text(
+                                        '• $item',
+                                        style: const TextStyle(
+                                          color: AppColors.lightgrey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -258,11 +448,16 @@ class LecturerPageState extends State<LecturerPage> {
                     MaterialPageRoute(
                         builder: (context) =>
                             LecturerFaqPage(tpNumber: tpNumber)))),
-            _buildNavItem(Icons.logout, 'Logout', () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-              );
+            _buildNavItem(Icons.logout, 'Logout', () async {
+              try {
+                await FirebaseAuth.instance.signOut(); // Firebase sign out
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              } catch (e) {
+                debugPrint("Sign-out error: $e");
+              }
             }),
           ],
         ),

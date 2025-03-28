@@ -1,21 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
-  final String id; // TP number
+  final String tpNumber;
   final String name;
   final List<String> modules;
 
   User({
-    required this.id,
+    required this.tpNumber,
     required this.name,
     required this.modules,
   });
 
   factory User.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return User(
-      id: doc.id,
-      name: data['name'] ?? '',
+      tpNumber: doc.id,
+      name: data['name'] ?? 'Unknown Lecturer',
       modules: List<String>.from(data['modules'] ?? []),
     );
   }

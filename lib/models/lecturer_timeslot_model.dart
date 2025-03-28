@@ -9,7 +9,7 @@ class Timeslot {
   final String endTime;
   final int capacity;
   final List<String> equipment;
-  final String status; // "available", "scheduled", "booked"
+  final String status;
 
   Timeslot({
     required this.id,
@@ -24,11 +24,11 @@ class Timeslot {
   });
 
   factory Timeslot.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Timeslot(
       id: doc.id,
-      venueName: data['venueName'] ?? '',
-      venueType: data['venueType'] ?? '',
+      venueName: data['venueName'] ?? 'Unnamed Venue',
+      venueType: data['venueType'] ?? 'N/A',
       date: data['date'] ?? '',
       startTime: data['startTime'] ?? '',
       endTime: data['endTime'] ?? '',
@@ -38,14 +38,16 @@ class Timeslot {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'venueName': venueName,
-        'venueType': venueType,
-        'date': date,
-        'startTime': startTime,
-        'endTime': endTime,
-        'capacity': capacity,
-        'equipment': equipment,
-        'status': status,
-      };
+  Map<String, dynamic> toMap() {
+    return {
+      'venueName': venueName,
+      'venueType': venueType,
+      'date': date,
+      'startTime': startTime,
+      'endTime': endTime,
+      'capacity': capacity,
+      'equipment': equipment,
+      'status': status,
+    };
+  }
 }
