@@ -11,7 +11,7 @@ import '../screens/admin_timetable_management.dart';
 import '../screens/admin_venues_management.dart';
 
 class AdminPage extends StatefulWidget {
-  const AdminPage({super.key});
+  const AdminPage({super.key, required String tpNumber});
 
   @override
   State<AdminPage> createState() => _AdminPageState();

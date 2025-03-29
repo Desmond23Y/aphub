@@ -6,7 +6,7 @@ class UpdateAccount extends StatefulWidget {
   final String name;
   final String role;
   final String password;
-  final List<dynamic>? modules; // Change to List<dynamic>?
+  final List<String> modules; // Changed to non-nullable
 
   const UpdateAccount({
     super.key,
@@ -14,7 +14,7 @@ class UpdateAccount extends StatefulWidget {
     required this.name,
     required this.role,
     required this.password,
-    this.modules,
+    required this.modules, // Made required
   });
 
   @override
@@ -34,12 +34,11 @@ class UpdateAccountState extends State<UpdateAccount> {
     _nameController = TextEditingController(text: widget.name);
     _passwordController = TextEditingController(text: widget.password);
 
-    // Convert List<dynamic> to String for the controller
+    // Initialize with empty list if null (shouldn't happen since it's required)
     _modulesController = TextEditingController(
-      text: widget.modules?.join(', ') ?? '',
+      text: widget.modules.join(', '),
     );
 
-    // Auto-generate email based on user ID
     _email = "${widget.userId}@mail.apu.edu.my";
   }
 
@@ -47,19 +46,28 @@ class UpdateAccountState extends State<UpdateAccount> {
     if (!_formKey.currentState!.validate()) return;
 
     try {
-      Map<String, dynamic> updatedData = {
+      final updatedData = <String, dynamic>{
         'name': _nameController.text.trim(),
-        'email': _email, // Ensure email is updated
+        'email': _email,
         'password': _passwordController.text.trim(),
       };
 
+      // Handle modules based on role
       if (widget.role == 'Lecturer') {
         updatedData['modules'] = _modulesController.text.isNotEmpty
-            ? _modulesController.text.split(',').map((e) => e.trim()).toList()
-            : [];
+            ? _modulesController.text
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : <String>[]; // Ensure it's always a list
       } else {
-        updatedData['modules'] = FieldValue.delete();
+        // For non-lecturers, completely remove the modules field
+        updatedData.remove('modules');
       }
+
+      // Debug print to verify data before saving
+      debugPrint('Updating data: $updatedData');
 
       await FirebaseFirestore.instance
           .collection("users")
@@ -69,14 +77,18 @@ class UpdateAccountState extends State<UpdateAccount> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text("Account updated successfully!"),
-            backgroundColor: Colors.green),
+          content: Text("Account updated successfully!"),
+          backgroundColor: Colors.green,
+        ),
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text("Error updating account: ${e.toString()}"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -140,9 +152,13 @@ class UpdateAccountState extends State<UpdateAccount> {
                 TextFormField(
                   controller: _modulesController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: _inputDecoration("Modules (Courses Taught)"),
-                  validator: (value) =>
-                      value!.isEmpty ? "Modules are required" : null,
+                  decoration: _inputDecoration("Modules (comma separated)"),
+                  validator: (value) {
+                    if (widget.role == 'Lecturer' && value!.isEmpty) {
+                      return 'Please enter at least one module';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
               ],
@@ -178,7 +194,6 @@ class UpdateAccountState extends State<UpdateAccount> {
     );
   }
 
-  /// **Custom Input Decoration**
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
@@ -190,5 +205,13 @@ class UpdateAccountState extends State<UpdateAccount> {
         borderSide: BorderSide.none,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _passwordController.dispose();
+    _modulesController.dispose();
+    super.dispose();
   }
 }

@@ -93,7 +93,7 @@ class ModuleManagementState extends State<ModuleManagement> {
                         module.data() as Map<String, dynamic>;
 
                     return Card(
-                      color: AppColors.darkdarkgrey, // Dark card background
+                      color: AppColors.darkdarkgrey,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

@@ -187,6 +187,11 @@ class AccountManagementState extends State<AccountManagement> {
   }
 
   void _editAccount(String userId, Map<String, dynamic> userData) {
+    // Convert modules to List<String> if it exists
+    final modules = userData['modules'] is String
+        ? [userData['modules'] as String]
+        : (userData['modules'] as List?)?.cast<String>() ?? [];
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -195,7 +200,7 @@ class AccountManagementState extends State<AccountManagement> {
           name: userData['name'] ?? '',
           role: userData['role'] ?? '',
           password: userData['password'] ?? '',
-          modules: userData['modules'] ?? '',
+          modules: modules,
         ),
       ),
     );

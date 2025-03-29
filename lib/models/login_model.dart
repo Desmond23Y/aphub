@@ -47,7 +47,7 @@ class LoginModel {
         } else if (userRole == 'Lecturer') {
           nextPage = LecturerPage(tpNumber: tpNumber);
         } else if (userRole == 'Admin') {
-          nextPage = const AdminPage();
+          nextPage = AdminPage(tpNumber: tpNumber);
         } else {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
